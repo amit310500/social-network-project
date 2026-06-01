@@ -1,29 +1,32 @@
 const Post = require('../models/Post');
 
-/// 1. יצירת פוסט חדש (Create) - מתוקן ומאובטח
+// 1. יצירת פוסט חדש (Create) - מעולה!
 const createPost = async (req, res) => {
     try {
-        const { content, groupId, mediaUrl } = req.body;
+        const { content, groupId, group, mediaUrl } = req.body;
+        const targetGroupId = groupId || group; 
 
-        // וידוא שהתוכן הגיע (הסרנו את חובת ה-groupId כדי שהפיד הכללי יעבוד)
         if (!content) {
             return res.status(400).json({ message: "Content is required" });
         }
 
-        const newPost = new Post({
-            sender: req.user.id, // משתמש ב-ID המאובטח שמגיע מה-auth middleware של השרת
+        // יצירת אובייקט הנתונים הבסיסי
+        const postData = {
+            sender: req.user.id, 
             content: content,
             mediaUrl: mediaUrl || ""
-        });
+        };
 
-        // אם ה-React שלח groupId (כלומר הפוסט נכתב בתוך קבוצה), נוסיף אותו לפוסט
-        if (groupId) {
-            newPost.group = groupId;
+        // הזרקה כפולה - מבטיח שזה יעבוד לא משנה איך השדה נקרא ב-Model
+        if (targetGroupId) {
+            postData.group = targetGroupId;
+            postData.groupId = targetGroupId; 
         }
 
+        const newPost = new Post(postData);
         const savedPost = await newPost.save();
         
-        // החזרת הפוסט עם שם המשתמש (בשביל להציג מיד בפיד)
+        // שליפה מחדש עם ה-Username של השולח (Populate)
         const populatedPost = await Post.findById(savedPost._id).populate('sender', 'username');
         
         res.status(201).json(populatedPost);
@@ -33,11 +36,19 @@ const createPost = async (req, res) => {
     }
 };
 
-// 2. משיכת כל הפוסטים (List)
+// 2. משיכת כל הפוסטים (List) - **מתוקן לסינון קבוצות**
 const getAllPosts = async (req, res) => {
     try {
-        // משיכת הפוסטים, הוספת פרטי המשתמש ומיון לפי תאריך
-        const posts = await Post.find()
+        // מקבל את ה-groupId ששולח ה-React ב-Query Parameters (למשל: ?groupId=123)
+        const { groupId } = req.query;
+        let query = {};
+
+        // אם נשלח מזהה קבוצה, נשלוף רק פוסטים ששייכים אליה!
+        if (groupId) {
+            query.group = groupId;
+        }
+
+        const posts = await Post.find(query)
             .populate('sender', 'username')
             .sort({ createdAt: -1 });
             
@@ -47,7 +58,7 @@ const getAllPosts = async (req, res) => {
     }
 };
 
-// 3. מחיקת פוסט (Delete) - הוספתי לך את זה לציון גבוה יותר
+// 3. מחיקת פוסט (Delete) - מעולה!
 const deletePost = async (req, res) => {
     try {
         const { id } = req.params;
@@ -63,10 +74,16 @@ const deletePost = async (req, res) => {
     }
 };
 
+// 4. חיפוש פוסטים (Search) - **מתוקן לסינון קבוצות בתוך החיפוש**
 const searchPosts = async (req, res) => {
     try {
-        const { text, username, startDate } = req.query;
+        const { text, username, startDate, groupId } = req.query;
         let query = {};
+
+        // חיוב סינון לפי הקבוצה הנוכחית כדי שתוצאות החיפוש לא יתערבבו מקבוצות אחרות!
+        if (groupId) {
+            query.group = groupId;
+        }
 
         // 1. סינון לפי טקסט בתוכן הפוסט
         if (text) {
@@ -78,7 +95,7 @@ const searchPosts = async (req, res) => {
             query.createdAt = { $gte: new Date(startDate) };
         }
 
-        // שליפת הפוסטים עם populate של השולח
+        // שליפת הפוסטים המסוננים עם קבוצה ופרמטרים
         let posts = await Post.find(query).populate('sender', 'username').sort({ createdAt: -1 });
 
         // 3. סינון לפי שם המשתמש שכתב את הפוסט

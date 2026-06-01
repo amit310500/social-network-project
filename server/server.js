@@ -7,23 +7,25 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 
+const app = express();
+const server = http.createServer(app);
+
+// --- Middleware ---
+app.use(cors()); // מאפשר ל-React לגשת לשרת מפורטים אחרים
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // 1. Import Routes
 const postRoutes = require('./routes/post_routes'); 
 const userRoutes = require('./routes/user_routes');
-const groupRoutes = require('./routes/group_routes');
-
-const app = express();
-const server = http.createServer(app);
+const groupRoutes = require('./routes/group_routes'); // ודאי שהנתיב נכון
 
 // Socket.io Setup
 const io = new Server(server, {
     cors: { origin: "*" } 
 });
 
-// --- Middleware ---
-app.use(cors()); // מאפשר ל-React לגשת לשרת מפורטים אחרים
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
 
 // לוגר פשוט - כל פעם שמישהו ינסה להירשם תראי את זה בטרמינל
 app.use((req, res, next) => {
