@@ -1,0 +1,22 @@
+/* הוספת פונט מודרני מ-Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* אפקט צל לכותרות */
+h1, h2, h3 {
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
+}
+
+/* אפקט מעבר (Transition) לכפתורים */
+button {
+  transition: all 0.3s ease !important;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+  cursor: pointer;
+}
