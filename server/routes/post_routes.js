@@ -1,18 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const postController = require('../controllers/post_controller');
-const auth = require('../middleware/auth'); // <-- הוספנו את ה-middleware של האבטחה
+const auth = require('../middleware/auth');
 
-// 1. משיכת כל הפוסטים - נשאר פתוח (או מוגן ב-auth, לבחירתכם)
-router.get('/', postController.getAllPosts); 
-
-// 2. יצירת פוסט חדש - חייב להיות מוגן ב-auth כדי שיקרא את ה-req.user.id!
-router.post('/', auth, postController.createPost); 
-
-// 3. מחיקת פוסט - חייב להיות מוגן ב-auth כדי לדעת מי מוחק
+// הוספתי auth גם לנתיב הזה כדי שיהיה עקבי
+router.get('/', auth, postController.getAllPosts); 
+router.post('/', auth, postController.createPost);
 router.delete('/:id', auth, postController.deletePost);
-
-// 4. חיפוש פוסטים (כבר הגדרתם נכון עם auth)
+router.put('/:id', auth, postController.updatePost);
 router.get('/search', auth, postController.searchPosts);
+
+// כאן התיקון לנתיב של הפיד האישי:
+// השתמשתי ב-getPersonalFeed שהגדרנו ב-Controller
+router.get('/my-feed', auth, postController.getPersonalFeed); 
+router.get('/user/:userId', auth, postController.getUserPosts);
 
 module.exports = router;
