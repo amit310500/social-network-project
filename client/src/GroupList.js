@@ -6,6 +6,7 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
   const [newGroupName, setNewGroupName] = useState("");
   const token = user?.token || localStorage.getItem('token');
 
+  // פונקציה למשיכת הקבוצות
   const fetchGroups = () => {
     if (!token) return;
     $.ajax({
@@ -21,6 +22,7 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
     if (token) fetchGroups();
   }, [token]);
 
+  // פונקציה ליצירת קבוצה
   const handleCreateGroup = (e) => {
     e.preventDefault();
     if (!newGroupName.trim()) return;
@@ -29,23 +31,45 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
       method: 'POST',
       contentType: 'application/json',
       headers: { 'Authorization': 'Bearer ' + token },
-      data: JSON.stringify({ name: newGroupName }), 
+      data: JSON.stringify({ name: newGroupName }),
       success: (data) => {
         setNewGroupName("");
         setGroups([data, ...groups]);
+        fetchGroups();
+        onSelectGroup(data);
       }
     });
   };
 
+  // פונקציה למחיקת קבוצה
+  const deleteGroup = (groupId) => {
+    const isConfirmed = window.confirm("Are you sure you want to delete this group?");
+    if (isConfirmed) {
+        $.ajax({
+            url: `http://localhost:5001/api/groups/${groupId}`,
+            method: 'DELETE',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: () => {
+                setGroups(groups.filter(g => g._id !== groupId));
+            },
+            error: (err) => {
+                console.error("Error deleting group", err);
+                alert("You are not authorized to delete this group.");
+            }
+        });
+    }
+  };
+
   return (
-    
     <div style={{ width: '280px', height: '100vh', background: '#ffffff', borderRight: '1px solid #e0e0e0', padding: '20px', display: 'flex', flexDirection: 'column' }}>
       <button 
         onClick={onShowMyFeed} 
-        style={{ width: '100%', padding: '10px', marginBottom: '10px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '5px' }}>
+        style={{ width: '100%', padding: '10px', marginBottom: '10px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
         My Personal Feed
       </button>
+      
       <h3 style={{ color: '#333', marginBottom: '20px', fontWeight: '700' }}>My Groups</h3>
+      
       <form onSubmit={handleCreateGroup} style={{ marginBottom: '25px' }}>
         <input 
           placeholder="New Group Name..." 
@@ -55,14 +79,44 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
         />
         <button type="submit" style={{ width: '100%', padding: '10px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>+ Create Group</button>
       </form>
+      
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {groups.map(g => (
-          <div key={g._id} onClick={() => onSelectGroup(g)} style={{ padding: '12px', background: selectedGroupId === g._id ? '#e7f1ff' : '#f8f9fa', borderRadius: '8px', cursor: 'pointer', border: selectedGroupId === g._id ? '1px solid #007bff' : '1px solid transparent', transition: '0.2s', fontWeight: selectedGroupId === g._id ? '600' : '400' }}>
-            👥 {g.name}
+          <div 
+            key={g._id} 
+            style={{ 
+              padding: '12px', 
+              background: selectedGroupId === g._id ? '#e7f1ff' : '#f8f9fa', 
+              borderRadius: '8px', 
+              cursor: 'pointer', 
+              border: selectedGroupId === g._id ? '1px solid #007bff' : '1px solid transparent', 
+              transition: '0.2s',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}
+          >
+            <span onClick={() => onSelectGroup(g)} style={{ fontWeight: selectedGroupId === g._id ? '600' : '400', flexGrow: 1 }}>
+              👥 {g.name}
+            </span>
+
+            {/* כפתור מחיקה - יופיע רק אם המשתמש הוא המנהל של הקבוצה */}
+            {user && g.admin?._id === user._id && (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation(); 
+                  deleteGroup(g._id);
+                }}
+                style={{ background: '#ff4d4f', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '12px' }}
+              >
+                Delete
+              </button>
+            )}
           </div>
         ))}
       </div>
     </div>
   );
 }
+
 export default GroupList;

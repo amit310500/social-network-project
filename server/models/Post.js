@@ -17,6 +17,10 @@ const postSchema = new mongoose.Schema({
         required: true,
         trim: true 
     },
+    isPrivate: { 
+        type: Boolean, 
+        default: false 
+    },
     // שדה למדיה (תמונה/וידאו) - דרישה טכנית בפרויקט
     mediaUrl: { 
         type: String, 

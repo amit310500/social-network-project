@@ -54,7 +54,7 @@ const login = async (req, res) => {
         // יצירת Token
         const token = jwt.sign(
             { id: user._id, role: user.role }, 
-            'YOUR_SECRET_KEY', 
+            process.env.JWT_SECRET, 
             { expiresIn: '1h' }
         );
 
@@ -70,4 +70,17 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+const getMe = async (req, res) => {
+    try {
+        // req.user.id מגיע מה-Middleware
+        const user = await User.findById(req.user.id).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ message: "Server error" });
+    }
+};
+
+module.exports = { register, login, getMe };

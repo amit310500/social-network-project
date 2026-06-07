@@ -8,7 +8,7 @@ function MyFeed({ user, currentUserId }) {
     $.ajax({
       url: `http://localhost:5001/api/posts/my-feed`,
       method: 'GET',
-      headers: { 'Authorization': 'Bearer ' + user.token },
+      headers: { 'Authorization': 'Bearer ' + (user.token || localStorage.getItem('token')) },
       success: (data) => setPosts(data),
       error: (err) => console.error("Error fetching posts:", err)
     });

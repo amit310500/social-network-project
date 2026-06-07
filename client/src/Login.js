@@ -15,12 +15,16 @@ function Login({ onLoginSuccess, onRegisterClick }) {
             contentType: 'application/json',
             data: JSON.stringify({ username, password }),
             success: (response) => {
-                // response הוא האובייקט שמגיע מהשרת (כולל ה-_id)
                 console.log("Login successful, user data:", response);
+    
+                // שמירת הטוקן ב-localStorage כדי שהדפדפן "יזכור" אותו
+                if (response.token) {
+                    localStorage.setItem('token', response.token); 
+                }
+                onLoginSuccess(response);
                 
                 alert("Welcome, " + response.username + "!");
                 
-                // קריאה אחת בלבד עם המשתנה הנכון
                 if (onLoginSuccess) {
                     onLoginSuccess(response); 
                 }

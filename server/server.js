@@ -1,5 +1,7 @@
 require('dotenv').config();
 
+console.log("DEBUG - Is JWT_SECRET loaded?", process.env.JWT_SECRET);
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');

@@ -3,24 +3,18 @@ const Group = require('../models/Group');
 // 1. יצירת קבוצה חדשה - עם הגנה על נתוני משתמש
 const createGroup = async (req, res) => {
     try {
-        if (!req.user || !req.user.id) {
-            return res.status(401).send({ message: "User not authenticated" });
-        }
-
-        const { name, isPrivate } = req.body;
-        if (!name) return res.status(400).send({ message: "Group name is required" });
-
-        const group = new Group({
+        const { name } = req.body;
+        // יצירת הקבוצה עם השדות הרלוונטיים
+        const newGroup = new Group({
             name,
-            isPrivate: isPrivate || false,
             admin: req.user.id,
-            members: [req.user.id]
+            members: [req.user.id] // הוספנו את עצמך כחברה ראשונה!
         });
-
-        await group.save();
-        res.status(201).send(group);
-    } catch (error) {
-        res.status(400).send({ message: "Failed to create group", error: error.message });
+        
+        await newGroup.save();
+        res.status(201).json(newGroup);
+    } catch (err) {
+        res.status(400).json({ message: "Failed to create group", error: err.message });
     }
 };
 
@@ -34,6 +28,7 @@ const getAllGroups = async (req, res) => {
     } catch (error) {
         res.status(500).send({ message: "Error fetching groups", error: error.message });
     }
+    
 };
 
 // 3. עדכון קבוצה - עם הגנה מפני גישה לא מורשית
@@ -65,15 +60,21 @@ const joinGroup = async (req, res) => {
         const group = await Group.findById(req.params.id);
         if (!group) return res.status(404).send({ message: "Group not found" });
 
-        if (group.members.includes(req.user.id)) {
-            return res.status(400).send({ message: "Already a member" });
+        // הבדיקה הקריטית: אם השדה לא מערך, נאפס אותו למערך ריק
+        if (!Array.isArray(group.pendingRequests)) {
+            group.pendingRequests = []; 
         }
 
-        group.members.push(req.user.id);
+        if (group.pendingRequests.includes(req.user.id)) {
+            return res.status(400).send({ message: "Already requested to join" });
+        }
+
+        group.pendingRequests.push(req.user.id);
         await group.save();
-        res.status(200).send({ message: "Joined successfully" });
-    } catch (error) {
-        res.status(500).send({ message: "Server error", error: error.message });
+        
+        return res.send({ message: "Request sent successfully, waiting for admin approval" });
+    } catch (err) {
+        res.status(500).send({ error: err.message });
     }
 };
 
@@ -110,11 +111,75 @@ const searchGroups = async (req, res) => {
     }
 };
 
+const approveMember = async (req, res) => {
+    try {
+        const { groupId, memberId } = req.params;
+        const group = await Group.findById(groupId);
+        
+        // מוודאים שהוא באמת בממתינים
+        if (!group.pendingRequests.includes(memberId)) {
+            return res.status(400).send({ message: "No join request found for this user" });
+        }
+
+        // העברה
+        group.pendingRequests = group.pendingRequests.filter(id => id.toString() !== memberId);
+        group.members.push(memberId);
+        
+        await group.save();
+        res.send({ message: "Member approved" });
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+};
+
+const getGroupRequests = async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.groupId);
+        // בדיקה האם המשתמש המחובר הוא המנהל
+        if (group.adminId.toString() !== req.user.id) {
+            return res.status(403).json({ message: "Only admin can view requests" });
+        }
+        res.json(group.requests); // מחזיר את רשימת הממתינים
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+// הוסף פונקציה זו ב-group_controller.js או עדכן את הפונקציה ששולפת את הקבוצה
+const getGroupDetails = async (req, res) => {
+    try {
+        // שימוש ב-populate כדי לקבל את פרטי המשתמשים שממתינים
+        const group = await Group.findById(req.params.id)
+            .populate('admin', 'username')
+            .populate('pendingRequests', 'username'); 
+        
+        if (!group) return res.status(404).send({ message: "Group not found" });
+        res.status(200).send(group);
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+};
+
+const getGroupById = async (req, res) => {
+    try {
+        const group = await Group.findById(req.params.id)
+            .populate('admin', 'username')
+            .populate('pendingRequests', 'username'); // כאן הקסם: ממירים ID לשם
+        res.status(200).json(group);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 module.exports = { 
     createGroup, 
     getAllGroups,
     updateGroup,
     joinGroup, 
     deleteGroup,
-    searchGroups
+    searchGroups,
+    approveMember,
+    getGroupRequests,
+    getGroupDetails,
+    getGroupById
 };

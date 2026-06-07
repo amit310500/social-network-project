@@ -1,26 +1,42 @@
 const Post = require('../models/Post');
+const Group = require('../models/Group'); // נדרש לבדיקת הרשאות
 
 const createPost = async (req, res) => {
     try {
-        const { content, groupId, group, mediaUrl } = req.body;
-        const targetGroupId = groupId || group; 
+        const { content, groupId, mediaUrl, isPrivate } = req.body;
+        
         if (!content) return res.status(400).json({ message: "Content is required" });
+        if (!groupId) return res.status(400).json({ message: "Group ID is required" });
 
-        const postData = { sender: req.user.id, content, mediaUrl: mediaUrl || "" };
-        if (targetGroupId) {
-            postData.group = targetGroupId;
-            postData.groupId = targetGroupId; 
+        // בדיקה: האם המשתמש חבר בקבוצה או מנהל?
+        const group = await Group.findById(groupId);
+        if (!group) return res.status(404).json({ message: "Group not found" });
+
+        const isMember = group.members.includes(req.user.id);
+        const isAdmin = group.admin.toString() === req.user.id;
+
+        if (!isMember && !isAdmin) {
+            return res.status(403).json({ message: "You must be a member to post in this group" });
         }
 
+        const postData = { 
+            sender: req.user.id, 
+            group: groupId, 
+            content, 
+            mediaUrl: mediaUrl || "",
+            isPrivate: isPrivate || false 
+        };
+
         const newPost = await Post.create(postData);
-        const populatedPost = await Post.findById(newPost._id).populate('sender', 'username');
+        const populatedPost = await Post.findById(newPost._id)
+            .populate('sender', 'username')
+            .populate('group', 'name');
+            
         res.status(201).json(populatedPost);
     } catch (err) {
         res.status(400).json({ message: "Failed to create post", error: err.message });
     }
 };
-
-
 
 const deletePost = async (req, res) => {
     try {
@@ -101,14 +117,20 @@ const searchPosts = async (req, res) => {
 
 const getPersonalFeed = async (req, res) => {
     try {
-        // מציאת כל הפוסטים של המשתמש המחובר
-        const myPosts = await Post.find({ sender: req.user.id }).populate('sender', 'username').populate('group', 'name');;
+        console.log("Looking for posts for user ID:", req.user.id);
         
-        // מציאת פוסטים של קבוצות שהמשתמש חבר בהן (דורש מערך groups ב-User)
-        // אם אין לך מערך groups ב-User, אפשר פשוט להחזיר את כל הפוסטים של הקבוצות שהמשתמש חבר בהן
+        // מציאת הפוסטים של המשתמש
+        const myPosts = await Post.find({ sender: req.user.id })
+                                  .populate('sender', 'username')
+                                  .populate('group', 'name')
+                                  .sort({ createdAt: -1 }); // הוספתי מיון לתוצאה טובה יותר
+        
+        console.log("Found posts count:", myPosts.length);
+        
         res.status(200).json(myPosts); 
     } catch (err) {
-        res.status(500).json({ message: "Error fetching feed" });
+        console.error("Error in getPersonalFeed:", err);
+        res.status(500).json({ message: "Error fetching feed", error: err.message });
     }
 };
 
@@ -123,11 +145,17 @@ const getUserPosts = async (req, res) => {
 
 const getAllPosts = async (req, res) => {
     try {
-        // מביא פוסטים לפי הקבוצה שנשלחה ב-Query
+        // req.query.groupId מגיע מה-URL: /api/posts?groupId=...
+        const group = await Group.findById(req.query.groupId); 
+        if (!group) return res.status(404).json({ message: "Group not found" });
+
+        // ... בדיקות הרשאות ...
+
+        // כאן השתמשת נכון בשם השדה "group" שראינו ב-MongoDB
         const posts = await Post.find({ group: req.query.groupId }).populate('sender', 'username');
         res.status(200).json(posts);
     } catch (err) {
-        res.status(500).json({ message: "Error fetching posts" });
+        res.status(500).json({ message: "Error" });
     }
 };
 
