@@ -159,6 +159,59 @@ const getAllPosts = async (req, res) => {
     }
 };
 
+const getStats = async (req, res) => {
+    try {
+        // גרף 1: פוסטים לפי חודש
+        const postsByMonth = await Post.aggregate([
+            { 
+                $group: { 
+                    _id: { $month: "$createdAt" }, 
+                    count: { $sum: 1 } 
+                } 
+            },
+            { 
+                $project: { 
+                    month: {
+                        $arrayElemAt: [
+                            ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+                            "$_id"
+                        ]
+                    }, 
+                    count: 1, 
+                    _id: 0 
+                } 
+            },
+            { $sort: { month: 1 } }
+        ]);
+        
+        // גרף 2: פוסטים לפי קבוצה
+        // שים לב: השתמשתי ב-"group" במקום ב-"groupId" לפי איך שכתבת ב-createPost
+        const postsByGroup = await Post.aggregate([
+            { $group: { _id: "$group", count: { $sum: 1 } } }, 
+            { 
+                $lookup: { 
+                    from: "groups", // שם האוסף ב-DB (בדרך כלל באות קטנה וברבים)
+                    localField: "_id", 
+                    foreignField: "_id", 
+                    as: "groupInfo" 
+                } 
+            },
+            { 
+                $project: { 
+                    name: { $ifNull: [{ $arrayElemAt: ["$groupInfo.name", 0] }, "Unknown"] }, 
+                    count: 1,
+                    _id: 0 
+                } 
+            }
+        ]);
+
+        res.json({ postsByMonth, postsByGroup });
+    } catch (err) { 
+        console.error("Stats Error:", err);
+        res.status(500).json({ error: err.message }); 
+    }
+};
+
 
 module.exports = {
     getAllPosts, // <--- זה היה חסר!
@@ -167,5 +220,6 @@ module.exports = {
     updatePost,
     searchPosts,
     getPersonalFeed,
-    getUserPosts
+    getUserPosts,
+    getStats
 };

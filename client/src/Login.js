@@ -64,7 +64,7 @@ function Login({ onLoginSuccess, onRegisterClick }) {
                     />
                 </div>
                 <button type="submit" style={{ 
-                    width: '100%', padding: '10px', backgroundColor: '#007bff', 
+                    width: '100%', padding: '10px', backgroundColor: '#9370DB', 
                     color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer'
                 }}>
                     Login
@@ -75,7 +75,7 @@ function Login({ onLoginSuccess, onRegisterClick }) {
                 <p style={{ fontSize: '14px', color: '#666' }}>Don't have an account?</p>
                 <button 
                     onClick={onRegisterClick} 
-                    style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }}
+                    style={{ background: 'none', border: 'none', color: '#9370DB', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }}
                 >
                     Register here
                 </button>

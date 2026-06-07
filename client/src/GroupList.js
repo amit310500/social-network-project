@@ -64,7 +64,7 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
     <div style={{ width: '280px', height: '100vh', background: '#ffffff', borderRight: '1px solid #e0e0e0', padding: '20px', display: 'flex', flexDirection: 'column' }}>
       <button 
         onClick={onShowMyFeed} 
-        style={{ width: '100%', padding: '10px', marginBottom: '10px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+        style={{ width: '100%', padding: '10px', marginBottom: '10px', background: '#9370DB', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
         My Personal Feed
       </button>
       
@@ -77,7 +77,7 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
           onChange={e => setNewGroupName(e.target.value)}
           style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', boxSizing: 'border-box', marginBottom: '10px' }}
         />
-        <button type="submit" style={{ width: '100%', padding: '10px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>+ Create Group</button>
+        <button type="submit" style={{ width: '100%', padding: '10px', background: '#9370DB', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>+ Create Group</button>
       </form>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -89,7 +89,7 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
               background: selectedGroupId === g._id ? '#e7f1ff' : '#f8f9fa', 
               borderRadius: '8px', 
               cursor: 'pointer', 
-              border: selectedGroupId === g._id ? '1px solid #007bff' : '1px solid transparent', 
+              border: selectedGroupId === g._id ? '1px solid #9370DB' : '1px solid transparent', 
               transition: '0.2s',
               display: 'flex',
               justifyContent: 'space-between',
@@ -103,14 +103,19 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
             {/* כפתור מחיקה - יופיע רק אם המשתמש הוא המנהל של הקבוצה */}
             {user && g.admin?._id === user._id && (
               <button 
-                onClick={(e) => {
-                  e.stopPropagation(); 
-                  deleteGroup(g._id);
-                }}
-                style={{ background: '#ff4d4f', color: '#fff', border: 'none', borderRadius: '4px', padding: '4px 8px', cursor: 'pointer', fontSize: '12px' }}
-              >
-                Delete
-              </button>
+                      onClick={(e) => {
+                        e.stopPropagation(); 
+                        deleteGroup(g._id);
+                      }} 
+                      style={{
+                        padding: '6px 14px', borderRadius: '8px', border: '1px solid #dc3545',
+                        background: '#ffffff', color: '#dc3545', cursor: 'pointer', fontWeight: '600'
+                      }}
+                      //onMouseOver={(e) => { e.target.style.background = '#dc3545'; e.target.style.color = '#ffffff'; }}
+                      //onMouseOut={(e) => { e.target.style.background = '#ffffff'; e.target.style.color = '#dc3545'; }}
+                    >
+                      Delete
+                    </button>
             )}
           </div>
         ))}

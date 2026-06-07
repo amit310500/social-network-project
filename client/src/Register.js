@@ -76,7 +76,7 @@ function Register({ onBackToLogin }) {
                 <button type="submit" style={{ 
                     width: '100%', 
                     padding: '10px', 
-                    backgroundColor: '#28a745', 
+                    backgroundColor: '#9370DB', 
                     color: 'white', 
                     border: 'none', 
                     borderRadius: '5px', 
@@ -94,7 +94,7 @@ function Register({ onBackToLogin }) {
                     style={{ 
                         background: 'none', 
                         border: 'none', 
-                        color: '#007bff', 
+                        color: '#9370DB', 
                         cursor: 'pointer',
                         fontSize: '14px',
                         textDecoration: 'underline'

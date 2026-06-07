@@ -20,6 +20,16 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
     border: '1px solid #ccc', 
     flex: 1 
     };
+  
+  const btnStyle = {
+    padding: '5px 12px',
+    borderRadius: '6px',
+    border: 'none',
+    cursor: 'pointer',
+    background: '#007bff',
+    color: '#fff',
+    fontSize: '12px'
+  };
 
   const fetchPosts = () => {
     if (!isMember && !isAdmin) return;
@@ -36,9 +46,9 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
     if (group?._id) {
       fetchPosts(); 
       // אם יש פונקציית רענון חיצונית, נקרא לה כדי לוודא שה-group ב-State של האבא מעודכן
-      if (onRefresh) {
-        onRefresh();
-      }
+      //if (onRefresh) {
+        //onRefresh();
+      //}
     }
   }, [group?._id]);
 
@@ -104,7 +114,37 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
     });
   };
 
-  // ... (handleDelete ו-handleUpdate נשארים ללא שינוי)
+  const handleDelete = (postId) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+    $.ajax({
+      url: `http://localhost:5001/api/posts/${postId}`,
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token },
+      success: () => {
+        setPosts(posts.filter(p => p._id !== postId));
+        if (onRefresh) onRefresh();
+      },
+      error: (err) => alert("Failed to delete post")
+    });
+  };
+
+  const handleUpdate = (postId, newContent) => {
+    const updatedContent = prompt("Edit your post:", newContent);
+    if (!updatedContent || updatedContent === newContent) return;
+
+    $.ajax({
+      url: `http://localhost:5001/api/posts/${postId}`,
+      method: 'PUT',
+      contentType: 'application/json',
+      headers: { 'Authorization': 'Bearer ' + token },
+      data: JSON.stringify({ content: updatedContent }),
+      success: (updatedPost) => {
+        setPosts(posts.map(p => p._id === postId ? updatedPost : p));
+        if (onRefresh) onRefresh();
+      },
+      error: () => alert("Failed to update post")
+    });
+  };
 
   return (
     <div style={{ flex: 1, padding: '20px', background: '#f4f7f6', minHeight: '100vh' }}>
@@ -156,7 +196,7 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
           <form onSubmit={handleSubmit} style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '30px' }}>
             <textarea value={newPost} onChange={e => setNewPost(e.target.value)} placeholder="What's on your mind?" style={{ width: '100%', border: 'none', resize: 'none', fontSize: '16px', outline: 'none', marginBottom: '10px' }} />
             <div style={{ textAlign: 'right' }}>
-              <button type="submit" style={{ padding: '10px 25px', background: '#007bff', color: '#fff', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>Post</button>
+              <button type="submit" style={{ padding: '10px 25px', background: '#9370DB', color: '#fff', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>Post</button>
             </div>
           </form>
         ) : (
@@ -205,6 +245,37 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
                 <p><strong>{post.sender?.username || 'Unknown'}</strong></p>
                 <p>{post.content}</p>
                 <small style={{ color: '#888' }}>{new Date(post.createdAt).toLocaleDateString()}</small>
+                
+                {/* כאן הוספנו את הבדיקה והכפתורים */}
+                {(post.sender?._id === currentUserId || isAdmin) && (
+                  <div style={{ marginTop: '15px', display: 'flex', gap: '12px' }}>
+                    {/* כפתור עריכה - כחול עדין */}
+                    <button 
+                      onClick={() => handleUpdate(post._id, post.content)} 
+                      style={{
+                        padding: '6px 14px', borderRadius: '8px', border: '1px solid #9370DB',
+                        background: '#ffffff', color: '#9370DB', cursor: 'pointer', fontWeight: '600'
+                      }}
+                      //onMouseOver={(e) => { e.target.style.background = '#007bff'; e.target.style.color = '#ffffff'; }}
+                      //onMouseOut={(e) => { e.target.style.background = '#ffffff'; e.target.style.color = '#007bff'; }}
+                    >
+                      Edit
+                    </button>
+
+                    {/* כפתור מחיקה - לבן עם טקסט אדום */}
+                    <button 
+                      onClick={() => handleDelete(post._id)} 
+                      style={{
+                        padding: '6px 14px', borderRadius: '8px', border: '1px solid #dc3545',
+                        background: '#ffffff', color: '#dc3545', cursor: 'pointer', fontWeight: '600'
+                      }}
+                      //onMouseOver={(e) => { e.target.style.background = '#dc3545'; e.target.style.color = '#ffffff'; }}
+                      //onMouseOut={(e) => { e.target.style.background = '#ffffff'; e.target.style.color = '#dc3545'; }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
               </div>
             ))
           ) : (

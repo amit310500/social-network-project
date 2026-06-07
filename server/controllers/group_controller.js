@@ -1,4 +1,5 @@
 const Group = require('../models/Group');
+const Post = require('../models/Post');
 
 // 1. יצירת קבוצה חדשה - עם הגנה על נתוני משתמש
 const createGroup = async (req, res) => {
@@ -88,6 +89,7 @@ const deleteGroup = async (req, res) => {
             return res.status(403).send({ message: "Not authorized to delete" });
         }
 
+        await Post.deleteMany({ group: req.params.id });
         await Group.findByIdAndDelete(req.params.id);
         res.status(200).send({ message: "Group deleted" });
     } catch (error) {
