@@ -11,8 +11,10 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
   const isAdmin = group?.admin?._id === currentUserId || group?.admin === currentUserId;
   //const isPending = group?.pendingRequests.includes(currentUserId);
 
+  const [isRequesting, setIsRequesting] = useState(false);
   const [isLocalPending, setIsLocalPending] = useState(false);
-  const isPending = isLocalPending || group?.pendingRequests.includes(currentUserId);
+  const isPending = isRequesting || isLocalPending || (group?.pendingRequests || []).some(
+  (r) => (r._id === currentUserId || r === currentUserId));
 
   const inputStyle = { 
     padding: '8px', 
@@ -43,14 +45,12 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
   };
 
   useEffect(() => {
-    if (group?._id) {
-      fetchPosts(); 
-      // אם יש פונקציית רענון חיצונית, נקרא לה כדי לוודא שה-group ב-State של האבא מעודכן
-      //if (onRefresh) {
-        //onRefresh();
-      //}
-    }
-  }, [group?._id]);
+  // ברגע שהמשתמש מופיע ב-members, אנחנו יודעים בוודאות שהוא אושר.
+  // רק אז נבטל את ה-isLocalPending.
+  if (group?.members?.includes(currentUserId)) {
+    setIsLocalPending(false);
+  }
+}, [group?.members, currentUserId]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -85,23 +85,33 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
   };
 
   const handleJoinRequest = () => {
-    setIsLocalPending(true); // עדכון מיידי של הממשק
-    $.ajax({
-      url: `http://localhost:5001/api/groups/${group._id}/join`,
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token },
-      success: (data) => {
-        alert(data.message);
-        if (onRefresh) onRefresh(); 
-      },
-      error: (err) => {
-        setIsLocalPending(false); // במקרה של שגיאה, נחזיר את הכפתור
-        alert("Failed: " + err.responseJSON?.message);
-      }
-    });
-  };
+  setIsLocalPending(true); 
+  setIsRequesting(true); // חיווי שהבקשה בעיבוד
+
+  $.ajax({
+    url: `http://localhost:5001/api/groups/${group._id}/join`,
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token },
+    success: (data) => {
+      // לא מאפסים את isLocalPending כאן! 
+      // הממשק יישאר על "Pending" עד ש-onRefresh יביא את ה-group המעודכן עם המשתמש ב-members.
+      alert(data.message);
+      if (onRefresh) onRefresh(); 
+    },
+    error: (err) => {
+      setIsLocalPending(false); 
+      setIsRequesting(false);
+      alert("Failed: " + (err.responseJSON?.message || "Error"));
+    }
+  });
+};
 
   const approveMember = (userId) => {
+    console.log("Approving user ID:", userId); // תוסיפי את זה!
+    if (!userId) {
+        console.error("Error: userId is undefined!");
+        return;
+    }
     $.ajax({
       url: `http://localhost:5001/api/groups/${group._id}/approve/${userId}`,
       method: 'POST',
@@ -146,9 +156,14 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
     });
   };
 
+  {console.log("Group Object structure:", group)}
+  {console.log("Group object received in PostsFeed:", group)}
+  {console.log("Pending requests in group:", group.pendingRequests)}
+
   return (
     <div style={{ flex: 1, padding: '20px', background: '#f4f7f6', minHeight: '100vh' }}>
       <div style={{ maxWidth: '650px', margin: '0 auto' }}>
+        {console.log("Pending requests data:", group.pendingRequests)}
         {isAdmin && group.pendingRequests && group.pendingRequests.length > 0 && (
         <div style={{ 
           padding: '20px', 
@@ -162,33 +177,41 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
             Pending Join Requests ({group.pendingRequests.length})
           </h3>
           
-          {group.pendingRequests.map((requestUser) => (
-            <div key={requestUser._id} style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center', 
-              background: 'rgba(255, 255, 255, 0.6)', // רקע לבן שקוף בתוך הקופסה
-              padding: '12px 15px',
-              borderRadius: '10px',
-              marginTop: '10px'
-            }}>
-              <span style={{ fontWeight: 'bold', color: '#333' }}>{requestUser.username}</span>
-              <button 
-                onClick={() => approveMember(requestUser._id)}
-                style={{ 
-                  padding: '6px 15px', 
-                  background: '#27ae60', 
-                  color: '#fff', 
-                  border: 'none', 
-                  borderRadius: '20px', // כפתור מעוגל נראה פחות כמו פוסט
-                  cursor: 'pointer',
-                  fontSize: '13px'
-                }}
-              >
-                Approve
-              </button>
-            </div>
-          ))}
+          {group.pendingRequests && group.pendingRequests.length > 0 ? (
+            group.pendingRequests.map((requestUser) => (
+              <div key={requestUser._id || requestUser} style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                padding: '10px 0',
+                borderBottom: '1px solid #f3e5ab' 
+              }}>
+                <span style={{ fontWeight: 'bold', color: '#333' }}>
+                  {requestUser.username ? requestUser.username : "Loading..."}
+                </span>
+                
+                {/* הכפתור המעוצב */}
+                <button 
+                  onClick={() => approveMember(requestUser._id || requestUser)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: '#28a745', // ירוק אישור
+                    color: '#fff',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '14px'
+                  }}
+                >
+                  Approve
+                </button>
+              </div>
+            ))
+          ) : (
+            <p>No pending requests.</p>
+          )}
+  
         </div>
       )}
 
@@ -206,8 +229,19 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
             ) : (
               <div>
                 <p>You are not a member of this group.</p>
-                <button onClick={handleJoinRequest} style={{ padding: '10px 20px', background: '#28a745', color: '#fff', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
-                  Request to Join
+                <button 
+                  disabled={isRequesting} 
+                  onClick={handleJoinRequest} 
+                  style={{ 
+                    padding: '10px 20px', 
+                    background: isRequesting ? '#ccc' : '#28a745', 
+                    color: '#fff', 
+                    border: 'none', 
+                    borderRadius: '5px', 
+                    cursor: isRequesting ? 'not-allowed' : 'pointer' 
+                  }}
+                >
+                  {isRequesting ? 'Sending...' : 'Request to Join'}
                 </button>
               </div>
             )}
@@ -239,47 +273,48 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
         </div>
         )}
         <div className="posts-list">
-          {posts.length > 0 ? (
-            posts.map((post) => (
-              <div key={post._id} style={{ background: '#fff', padding: '15px', borderRadius: '10px', marginBottom: '15px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                <p><strong>{post.sender?.username || 'Unknown'}</strong></p>
-                <p>{post.content}</p>
-                <small style={{ color: '#888' }}>{new Date(post.createdAt).toLocaleDateString()}</small>
-                
-                {/* כאן הוספנו את הבדיקה והכפתורים */}
-                {(post.sender?._id === currentUserId || isAdmin) && (
-                  <div style={{ marginTop: '15px', display: 'flex', gap: '12px' }}>
-                    {/* כפתור עריכה - כחול עדין */}
-                    <button 
-                      onClick={() => handleUpdate(post._id, post.content)} 
-                      style={{
-                        padding: '6px 14px', borderRadius: '8px', border: '1px solid #9370DB',
-                        background: '#ffffff', color: '#9370DB', cursor: 'pointer', fontWeight: '600'
-                      }}
-                      //onMouseOver={(e) => { e.target.style.background = '#007bff'; e.target.style.color = '#ffffff'; }}
-                      //onMouseOut={(e) => { e.target.style.background = '#ffffff'; e.target.style.color = '#007bff'; }}
-                    >
-                      Edit
-                    </button>
-
-                    {/* כפתור מחיקה - לבן עם טקסט אדום */}
-                    <button 
-                      onClick={() => handleDelete(post._id)} 
-                      style={{
-                        padding: '6px 14px', borderRadius: '8px', border: '1px solid #dc3545',
-                        background: '#ffffff', color: '#dc3545', cursor: 'pointer', fontWeight: '600'
-                      }}
-                      //onMouseOver={(e) => { e.target.style.background = '#dc3545'; e.target.style.color = '#ffffff'; }}
-                      //onMouseOut={(e) => { e.target.style.background = '#ffffff'; e.target.style.color = '#dc3545'; }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
+          {isMember || isAdmin ? (
+            posts.length > 0 ? (
+              posts.map((post) => (
+                <div key={post._id} style={{ background: '#fff', padding: '15px', borderRadius: '10px', marginBottom: '15px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                  <p><strong>{post.sender?.username || 'Unknown'}</strong></p>
+                  <p>{post.content}</p>
+                  <small style={{ color: '#888' }}>{new Date(post.createdAt).toLocaleDateString()}</small>
+                  
+                  {(post.sender?._id === currentUserId || isAdmin) && (
+                    <div style={{ marginTop: '15px', display: 'flex', gap: '12px' }}>
+                      <button 
+                        onClick={() => handleUpdate(post._id, post.content)} 
+                        style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #9370DB', background: '#ffffff', color: '#9370DB', cursor: 'pointer', fontWeight: '600' }}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(post._id)} 
+                        style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #dc3545', background: '#ffffff', color: '#dc3545', cursor: 'pointer', fontWeight: '600' }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p style={{ textAlign: 'center', color: '#666' }}>No posts in this group yet.</p>
+            )
           ) : (
-            <p style={{ textAlign: 'center', color: '#666' }}>No posts in this group yet.</p>
+            // תצוגה עבור מי שאינו חבר בקבוצה
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '40px', 
+              background: '#fff', 
+              borderRadius: '12px', 
+              border: '1px dashed #ccc',
+              color: '#666' 
+            }}>
+              <h3>🔒 Private Group</h3>
+              <p>You must be an approved member to view posts in this group.</p>
+            </div>
           )}
         </div>
       </div>

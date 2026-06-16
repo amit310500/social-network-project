@@ -22,14 +22,13 @@ function App() {
   const refreshSelectedGroup = () => {
     if (!selectedGroup) return;
     $.ajax({
-      // שיניתי את הנתיב כדי למשוך את הקבוצה הזו ספציפית
       url: `http://localhost:5001/api/groups/${selectedGroup._id}`, 
       method: 'GET',
       headers: { 'Authorization': 'Bearer ' + user.token },
       success: (updatedGroup) => {
-        // עכשיו נעדכן את הקבוצה ב-State
-        //setSelectedGroup(updatedGroup);
-        setSelectedGroup({ ...updatedGroup }); 
+        // הוספנו כאן את ה-updatedGroup בשינוי אובייקט חדש
+        // כדי לוודא ש-React יזהה שינוי ויבצע Render מחדש
+        setSelectedGroup(prev => ({ ...prev, ...updatedGroup })); 
       },
       error: (err) => console.error("Error refreshing group", err)
     });
@@ -78,7 +77,14 @@ function App() {
 
   const handleGroupSelect = (group) => {
     setViewMode('group');
-    setSelectedGroup(group);
+    // במקום רק לעדכן state, נמשוך מהשרת עם ה-populate המלא!
+    $.ajax({
+      url: `http://localhost:5001/api/groups/${group._id}`,
+      headers: { 'Authorization': 'Bearer ' + user.token },
+      success: (fullGroupData) => {
+        setSelectedGroup(fullGroupData); // עכשיו ה-group ב-State מכיל את המידע המלא עם ה-populate
+      }
+    });
   };
 
   const handleShowMyFeed = () => {
@@ -150,14 +156,11 @@ function App() {
                 <>
                   <h2>{selectedGroup.name}</h2> 
                   <PostsFeed 
-                      key={refreshKey}
+                      key={selectedGroup._id} // שימוש ב-ID כמפתח מבטיח רינדור רק כשבוחרים קבוצה חדשה
                       user={user} 
                       group={selectedGroup} 
                       currentUserId={user._id}
-                      onRefresh={() => {
-                              refreshSelectedGroup();       // מרענן את הקבוצה ב-State
-                              setRefreshKey(prev => prev + 1); // מרענן את כל ה-Component
-                      }}
+                      onRefresh={refreshSelectedGroup} // רק הפונקציה הזו!
                   />
                 </>
               ) : (

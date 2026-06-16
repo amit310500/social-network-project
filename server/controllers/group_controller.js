@@ -166,9 +166,15 @@ const getGroupById = async (req, res) => {
     try {
         const group = await Group.findById(req.params.id)
             .populate('admin', 'username')
-            .populate('pendingRequests', 'username'); // כאן הקסם: ממירים ID לשם
+            .populate('pendingRequests', 'username'); 
+        
+        // הדפסה לטרמינל בשרת - זה השלב הכי חשוב!
+        console.log("DEBUG: Group found in DB:", JSON.stringify(group, null, 2));
+
+        if (!group) return res.status(404).json({ message: "Group not found" });
         res.status(200).json(group);
     } catch (err) {
+        console.error("DEBUG: Error in getGroupById:", err);
         res.status(500).json({ error: err.message });
     }
 };
