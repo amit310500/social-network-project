@@ -1,16 +1,25 @@
+<<<<<<< HEAD
 import React, { useEffect, useState, useRef } from 'react';
 import $ from 'jquery';
 import VideoPost from './VideoPost';
 import CanvasEditor from './CanvasEditor';
+=======
+import React, { useEffect, useState } from 'react';
+import $ from 'jquery';
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
 
 function PostsFeed({ user, group, currentUserId, onRefresh }) {
   const [posts, setPosts] = useState([]);
   const [searchParams, setSearchParams] = useState({ text: "", username: "", startDate: "" });
   const [newPost, setNewPost] = useState("");
+<<<<<<< HEAD
   const [showCanvas, setShowCanvas] = useState(false);
   const token = user?.token || localStorage.getItem('token');
   const [pendingVideoUrl, setPendingVideoUrl] = useState(null);
   const [pendingDrawing, setPendingDrawing] = useState(null);
+=======
+  const token = user?.token || localStorage.getItem('token');
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
 
   const isMember = group?.members.includes(currentUserId);
   const isAdmin = group?.admin?._id === currentUserId || group?.admin === currentUserId;
@@ -50,6 +59,7 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
   };
 
   useEffect(() => {
+<<<<<<< HEAD
     // ברגע שהמשתמש מופיע ב-members, אנחנו יודעים בוודאות שהוא אושר.
     // רק אז נבטל את ה-isLocalPending.
     if (group?.members?.includes(currentUserId)) {
@@ -77,11 +87,24 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
     }
 
     // אם הגענו לכאן, סימן שיש לפחות משהו אחד
+=======
+  // ברגע שהמשתמש מופיע ב-members, אנחנו יודעים בוודאות שהוא אושר.
+  // רק אז נבטל את ה-isLocalPending.
+  if (group?.members?.includes(currentUserId)) {
+    setIsLocalPending(false);
+  }
+}, [group?.members, currentUserId]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!newPost.trim()) return;
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
     $.ajax({
       url: 'http://localhost:5001/api/posts',
       method: 'POST',
       contentType: 'application/json',
       headers: { 'Authorization': 'Bearer ' + token },
+<<<<<<< HEAD
       data: JSON.stringify({ 
           content: newPost.trim().length > 0 ? newPost.trim() : null,
           groupId: group._id, 
@@ -102,6 +125,16 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
       }
     });
 };
+=======
+      data: JSON.stringify({ content: newPost, groupId: group._id }),
+      success: (p) => { 
+        setNewPost(""); 
+        setPosts([p, ...posts]); 
+      },
+      error: () => alert("You must be an approved member to post!")
+    });
+  };
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
 
   const handleSearch = () => {
     $.ajax({
@@ -190,6 +223,7 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
     });
   };
 
+<<<<<<< HEAD
   const handleVideoUpload = (file) => {
     if (!file) return;
 
@@ -215,11 +249,14 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
   };
 
 
+=======
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
   {console.log("Group Object structure:", group)}
   {console.log("Group object received in PostsFeed:", group)}
   {console.log("Pending requests in group:", group.pendingRequests)}
 
   return (
+<<<<<<< HEAD
     <div style={{ 
     border: '1px solid #e1e8ed', 
     borderRadius: '10px', 
@@ -231,6 +268,9 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
     width: '90%', 
     margin: '0 auto 20px auto' 
 }}>
+=======
+    <div style={{ flex: 1, padding: '20px', background: '#f4f7f6', minHeight: '100vh' }}>
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
       <div style={{ maxWidth: '650px', margin: '0 auto' }}>
         {console.log("Pending requests data:", group.pendingRequests)}
         {isAdmin && group.pendingRequests && group.pendingRequests.length > 0 && (
@@ -286,6 +326,7 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
 
         {isMember || isAdmin ? (
           <form onSubmit={handleSubmit} style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '30px' }}>
+<<<<<<< HEAD
             <textarea 
               value={newPost} 
               onChange={e => setNewPost(e.target.value)} 
@@ -353,6 +394,12 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
                 }} />
               </div>
             )}
+=======
+            <textarea value={newPost} onChange={e => setNewPost(e.target.value)} placeholder="What's on your mind?" style={{ width: '100%', border: 'none', resize: 'none', fontSize: '16px', outline: 'none', marginBottom: '10px' }} />
+            <div style={{ textAlign: 'right' }}>
+              <button type="submit" style={{ padding: '10px 25px', background: '#9370DB', color: '#fff', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>Post</button>
+            </div>
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
           </form>
         ) : (
           <div style={{ padding: '20px', background: '#fff3cd', borderRadius: '12px', marginBottom: '30px', textAlign: 'center', border: '1px solid #ffeeba' }}>
@@ -408,6 +455,7 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
           {isMember || isAdmin ? (
             posts.length > 0 ? (
               posts.map((post) => (
+<<<<<<< HEAD
   <div key={post._id} style={{ 
       background: '#fff', 
       padding: '15px', 
@@ -472,11 +520,48 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
   </div>
 ))
                 
+=======
+                <div key={post._id} style={{ background: '#fff', padding: '15px', borderRadius: '10px', marginBottom: '15px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                  <p><strong>{post.sender?.username || 'Unknown'}</strong></p>
+                  <p>{post.content}</p>
+                  <small style={{ color: '#888' }}>{new Date(post.createdAt).toLocaleDateString()}</small>
+                  
+                  {(post.sender?._id === currentUserId || isAdmin) && (
+                    <div style={{ marginTop: '15px', display: 'flex', gap: '12px' }}>
+                      <button 
+                        onClick={() => handleUpdate(post._id, post.content)} 
+                        style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #9370DB', background: '#ffffff', color: '#9370DB', cursor: 'pointer', fontWeight: '600' }}
+                      >
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(post._id)} 
+                        style={{ padding: '6px 14px', borderRadius: '8px', border: '1px solid #dc3545', background: '#ffffff', color: '#dc3545', cursor: 'pointer', fontWeight: '600' }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
             ) : (
               <p style={{ textAlign: 'center', color: '#666' }}>No posts in this group yet.</p>
             )
           ) : (
+<<<<<<< HEAD
             <div style={{ textAlign: 'center', padding: '40px', background: '#fff', borderRadius: '12px', border: '1px dashed #ccc', color: '#666' }}>
+=======
+            // תצוגה עבור מי שאינו חבר בקבוצה
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '40px', 
+              background: '#fff', 
+              borderRadius: '12px', 
+              border: '1px dashed #ccc',
+              color: '#666' 
+            }}>
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
               <h3>🔒 Private Group</h3>
               <p>You must be an approved member to view posts in this group.</p>
             </div>

@@ -8,8 +8,11 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+<<<<<<< HEAD
 const multer = require('multer');
 const fs = require('fs');
+=======
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
 
 const app = express();
 const server = http.createServer(app);
@@ -84,6 +87,7 @@ app.use((err, req, res, next) => {
     });
 });
 
+<<<<<<< HEAD
 const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir);
@@ -112,6 +116,8 @@ app.post('/api/posts/upload-video', upload.single('video'), (req, res) => {
   res.json({ videoUrl });
 });
 
+=======
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
 // 6. Start Server
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {

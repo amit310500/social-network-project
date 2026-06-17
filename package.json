@@ -17,7 +17,10 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.6.2",
+<<<<<<< HEAD
     "multer": "^2.2.0",
+=======
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
     "socket.io": "^4.8.3"
   }
 }

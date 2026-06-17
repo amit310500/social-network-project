@@ -14,7 +14,11 @@ const postSchema = new mongoose.Schema({
     },
     content: { 
         type: String, 
+<<<<<<< HEAD
         required: false,
+=======
+        required: true,
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
         trim: true 
     },
     isPrivate: { 
@@ -26,9 +30,12 @@ const postSchema = new mongoose.Schema({
         type: String, 
         default: "" 
     },
+<<<<<<< HEAD
     drawing: { 
         type: String,
      },
+=======
+>>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
     // שדות שיעזרו לך להפיק גרפים ב-D3.js בהמשך
     likes: [{ 
         type: mongoose.Schema.Types.ObjectId, 
