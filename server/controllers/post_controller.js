@@ -3,20 +3,12 @@ const Group = require('../models/Group'); // נדרש לבדיקת הרשאות
 
 const createPost = async (req, res) => {
     try {
-<<<<<<< HEAD
-        const { content, mediaUrl, drawing, isPrivate } = req.body;
-        const groupId = req.body.groupId || req.body.group; // תקבל גם אם קוראים לו groupId וגם אם group
+
+        const { content, groupId, mediaUrl,drawing, isPrivate } = req.body;
         
-        const hasContent = content && content.trim().length > 0;
-        
-        if (!content && !mediaUrl && !drawing) {
-            return res.status(400).json({ message: "Content, media, or drawing is required" });
+        if (!content && !drawing && !mediaUrl) {
+            return res.status(400).json({ message: "Content, drawing or media is required" });
         }
-=======
-        const { content, groupId, mediaUrl, isPrivate } = req.body;
-        
-        if (!content) return res.status(400).json({ message: "Content is required" });
->>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
         if (!groupId) return res.status(400).json({ message: "Group ID is required" });
 
         // בדיקה: האם המשתמש חבר בקבוצה או מנהל?
@@ -33,14 +25,9 @@ const createPost = async (req, res) => {
         const postData = { 
             sender: req.user.id, 
             group: groupId, 
-<<<<<<< HEAD
-            content: content || "",
+            content: content || "", 
             mediaUrl: mediaUrl || "",
             drawing: drawing || "",
-=======
-            content, 
-            mediaUrl: mediaUrl || "",
->>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
             isPrivate: isPrivate || false 
         };
 
@@ -162,25 +149,6 @@ const getUserPosts = async (req, res) => {
 
 const getAllPosts = async (req, res) => {
     try {
-<<<<<<< HEAD
-        const { groupId } = req.query;
-        
-        // אם אין groupId, נחזיר שגיאה או פוסטים גלובליים (לפי בחירתך)
-        if (!groupId) {
-            return res.status(400).json({ message: "Group ID is missing" });
-        }
-
-        // חיפוש הפוסטים ישירות לפי ה-groupId
-        // ב-createPost השתמשת בשדה בשם "group", אז זה השם שצריך להיות כאן!
-        const posts = await Post.find({ group: groupId })
-                                .populate('sender', 'username')
-                                .sort({ createdAt: -1 }); // הכי חדשים למעלה
-        
-        res.status(200).json(posts);
-    } catch (err) {
-        console.error("Error in getAllPosts:", err);
-        res.status(500).json({ message: "Server error", error: err.message });
-=======
         // req.query.groupId מגיע מה-URL: /api/posts?groupId=...
         const group = await Group.findById(req.query.groupId); 
         if (!group) return res.status(404).json({ message: "Group not found" });
@@ -192,7 +160,6 @@ const getAllPosts = async (req, res) => {
         res.status(200).json(posts);
     } catch (err) {
         res.status(500).json({ message: "Error" });
->>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
     }
 };
 

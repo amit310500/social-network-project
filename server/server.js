@@ -8,11 +8,6 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
-<<<<<<< HEAD
-const multer = require('multer');
-const fs = require('fs');
-=======
->>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
 
 const app = express();
 const server = http.createServer(app);
@@ -87,37 +82,6 @@ app.use((err, req, res, next) => {
     });
 });
 
-<<<<<<< HEAD
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir);
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
-  }
-});
-const upload = multer({ storage });
-// ----------------
-
-// ... (אחרי app.use('/api/groups', groupRoutes);)
-
-// --- Route להעלאת וידאו ---
-app.post('/api/posts/upload-video', upload.single('video'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: "No file uploaded" });
-  }
-  // החזרת ה-URL ללקוח
-  const videoUrl = `http://localhost:5001/uploads/${req.file.filename}`;
-  res.json({ videoUrl });
-});
-
-=======
->>>>>>> ee1cbc61ba8baba94a400ca5a59e7c5ef1667202
 // 6. Start Server
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
