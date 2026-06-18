@@ -2,6 +2,7 @@ const Post = require('../models/Post');
 const Group = require('../models/Group'); // נדרש לבדיקת הרשאות
 
 const createPost = async (req, res) => {
+    console.log("Data received in server:", req.body);
     try {
 
         const { content, groupId, mediaUrl,drawing, isPrivate } = req.body;

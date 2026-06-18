@@ -16,21 +16,34 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
   const isAdmin = group?.admin?._id === currentUserId || group?.admin === currentUserId;
 
   const fetchPosts = () => {
-    if (!isMember && !isAdmin) return;
+    // השתמשי ב-token מה-localStorage אם הוא לא מגיע ב-props
+    const token = localStorage.getItem('token'); 
+    
     $.ajax({
       url: `http://localhost:5001/api/posts?groupId=${group._id}`,
+      method: 'GET',
       headers: { 'Authorization': 'Bearer ' + token },
-      success: (data) => setPosts(data)
+      success: (data) => {
+        console.log("Success! Posts received:", data);
+        /*setPosts(data);*/
+        setPosts(data.reverse());
+      },
+      error: (err) => {
+        console.error("Fetch failed. Status:", err.status);
+      }
     });
-  };
+};
 
-  // בתוך PostsFeed.js
-useEffect(() => { 
-  if (group?._id) {
-    setPosts([]); // איפוס הפיד הקיים לפני הטעינה החדשה
-    fetchPosts(); // קריאה חוזרת מהשרת
+ useEffect(() => { 
+  console.log("PostsFeed mounted/updated. Group:", group);
+  
+  if (group && group._id) {
+    console.log("Triggering fetchPosts for ID:", group._id);
+    fetchPosts(); 
+  } else {
+    console.log("Waiting for group ID...");
   }
-}, [group?._id]);
+}, [group]);
 
  const handleSubmit = (e) => {
   e.preventDefault();
@@ -107,8 +120,54 @@ useEffect(() => {
     });
   };
 
+  const handleJoinRequest = () => {
+    // שיניתי את ה-URL ל-join במקום request כדי שיתאים לשרת שלך
+    $.ajax({
+      url: `http://localhost:5001/api/groups/${group._id}/join`, 
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      success: (data) => {
+        alert(data.message);
+        // אחרי שליחה מוצלחת, כדאי לרענן כדי לראות את השינוי
+        if (onRefresh) onRefresh(); 
+      },
+      error: (err) => alert("Failed: " + (err.responseJSON?.message || err.responseText))
+    });
+  };
+
+  const approveRequest = (memberId) => {
+    $.ajax({
+      url: `http://localhost:5001/api/groups/${group._id}/approve/${memberId}`,
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token },
+      success: () => {
+        alert("Member approved!");
+        if (onRefresh) onRefresh();
+      },
+      error: (err) => alert("Failed to approve: " + err.responseText)
+    });
+  };
+
+
   return (
-    <div style={{ maxWidth: '650px', margin: '0 auto', padding: '20px' }}>
+    <div style={{ flex: 1, padding:'20px',background: '#f4f7f6',minHeight: '100hv' }}>
+      <div style={{ maxWidth: '650px', margin: '0 auto'}}>
+          {/* רשימת בקשות למנהל */}
+          {isAdmin && group.pendingRequests?.length > 0 && (
+            <div style={{ padding: '20px',  background: '#fef9e7', borderRadius: '16px', marginBottom: '30px', border: '2px dashed #f1c40f', boxShadow: 'none' }}>
+              <h3 style={{ marginTop: 0, color: '#9a7d0a', fontSize: '16px', textTransform: 'uppercase', letterSpacing: '1px'}}>Pending Join Requests ({group.pendingRequests.length}):</h3>
+              {group.pendingRequests.map(reqUser => (
+                <div key={reqUser._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',background: 'rgba(255,255,255,0.6)', padding: '12px 15px', borderRadius:'10px', marginTop: '10px' }}>
+                  {/* מציגים את שם המשתמש במקום אובייקט שלם */}
+                  <span>{reqUser.username}</span> 
+                  <button onClick={() => approveRequest(reqUser._id)} style={{ background: '#28a745', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '6px' }}>
+                    Approve
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
       {/* טופס פוסט מעוצב */}
       {(isMember || isAdmin) && (
         <form onSubmit={handleSubmit} style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '30px', border: '1px solid #e1e8ed' }}>
@@ -152,21 +211,67 @@ useEffect(() => {
 
       {/* רשימת פוסטים */}
       <div>
-        {posts.map(post => (
-          <div key={post._id} style={{ background: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e1e8ed' }}>
-            <p><strong>{post.sender?.username}</strong></p>
-            <p>{post.content}</p>
-            {post.mediaUrl && <VideoPost videoUrl={post.mediaUrl} />}
-            {post.drawing && <img src={post.drawing} alt="post" style={{ maxWidth: '100%', borderRadius: '8px' }} />}
-            
-            {(post.sender?._id === currentUserId || isAdmin) && (
-              <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-                <button onClick={() => handleUpdate(post._id, post.content)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #9370DB', color: '#9370DB', background: '#fff' }}>Edit</button>
-                <button onClick={() => handleDelete(post._id)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #dc3545', color: '#dc3545', background: '#fff' }}>Delete</button>
-              </div>
+        {(isMember || isAdmin) ? (
+          // אם הוא חבר - מציגים את הפוסטים
+          posts.map(post => (
+            <div key={post._id} style={{ background: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e1e8ed' }}>
+              <p><strong>{post.sender?.username}</strong></p>
+              <p>{post.content}</p>
+              {post.mediaUrl && (
+                <div style={{ 
+                  maxWidth: '300px', // רוחב מקסימלי מוקטן (כמו בתמונה)
+                  width: '100%', 
+                  margin: '10px 0',
+                  borderRadius: '8px',
+                  overflow: 'hidden' // מוודא שהסרטון לא חורג מהפינות המעוגלות
+                }}>
+                  <VideoPost videoUrl={post.mediaUrl} />
+                </div>
             )}
-          </div>
-        ))}
+              {post.drawing && post.drawing.startsWith("data:image/") && <img 
+                src={post.drawing} alt="post" style={{ 
+                    maxWidth: '300px', // גודל מוקטן
+                    width: '100%', 
+                    height: 'auto', 
+                    display: 'block', 
+                    margin: '10px 0', 
+                    borderRadius: '8px',
+                    border: '1px solid #eee'
+                }}  
+              />}
+              <small style={{ color: '#888' }}>{new Date(post.createdAt).toLocaleString()}</small>
+              
+              {(post.sender?._id === currentUserId || isAdmin) && (
+                <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                  <button onClick={() => handleUpdate(post._id, post.content)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #9370DB', color: '#9370DB', background: '#fff' }}>Edit</button>
+                  <button onClick={() => handleDelete(post._id)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #dc3545', color: '#dc3545', background: '#fff' }}>Delete</button>
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+  <div style={{ 
+    textAlign: 'center', padding: '20px', background: '#fff3cd', 
+    color: '#856404', borderRadius: '12px', border: '1px solid #ffeeba', marginBottom: '20px' 
+  }}>
+    <h3>This group is private</h3>
+    
+    {/* בדיקה אם המשתמש כבר ביקש להצטרף */}
+    {group.pendingRequests?.some(req => req._id === currentUserId) ? (
+      <p style={{ fontWeight: 'bold' }}>
+        Your request to join is pending approval from the admin.
+      </p>
+    ) : (
+      <div>
+        <p>You must be a member to view the posts in this group.</p>
+        <button onClick={handleJoinRequest} style={{ background: '#28a745', color: '#fff', padding: '8px 16px', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>
+          Request to Join
+        </button>
+      </div>
+    )}
+  </div>
+)}
+        </div>
       </div>
     </div>
   );
