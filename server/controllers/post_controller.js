@@ -163,6 +163,18 @@ const getAllPosts = async (req, res) => {
         res.status(500).json({ message: "Error" });
     }
 };
+const uploadVideo = async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: "No file uploaded" });
+        }
+        // נניח שאת שומרת את הקובץ וחוזרת עם ה-URL שלו
+        const videoUrl = `/uploads/${req.file.filename}`; 
+        res.status(200).json({ videoUrl: videoUrl });
+    } catch (err) {
+        res.status(500).json({ message: "Upload failed", error: err.message });
+    }
+};
 
 const getStats = async (req, res) => {
     try {
@@ -226,5 +238,6 @@ module.exports = {
     searchPosts,
     getPersonalFeed,
     getUserPosts,
-    getStats
+    getStats,
+    uploadVideo
 };

@@ -86,17 +86,35 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
 };
 
   const handleVideoUpload = (file) => {
-    const formData = new FormData();
-    formData.append('video', file);
-    $.ajax({
-      url: 'http://localhost:5001/api/posts/upload-video',
-      method: 'POST',
-      data: formData,
-      processData: false, contentType: false,
-      headers: { 'Authorization': 'Bearer ' + token },
-      success: (data) => setPendingVideoUrl(data.videoUrl)
-    });
-  };
+  if (!file) return;
+
+  // 1. תצוגה מקדימה מיידית (זה עובד כבר ב-Preview שלך)
+  const previewUrl = URL.createObjectURL(file);
+  setPendingVideoUrl(previewUrl); 
+
+  // 2. העלאה לשרת
+  const formData = new FormData();
+  formData.append('video', file); // וודאי ששם השדה 'video' תואם למה שהשרת מצפה (למשל ב-Multer)
+  
+  $.ajax({
+    url: 'http://localhost:5001/api/posts/upload-video',
+    method: 'POST',
+    data: formData,
+    processData: false, 
+    contentType: false,
+    headers: { 'Authorization': 'Bearer ' + token },
+    success: (data) => {
+      console.log("Video uploaded successfully:", data);
+      setPendingVideoUrl(data.videoUrl); // עדכון ל-URL הקבוע
+    },
+    error: (err) => {
+      // הדפסת השגיאה המדויקת מהשרת ל-Console
+      console.error("Server Error details:", err);
+      alert("Video upload failed: " + (err.responseJSON?.message || err.statusText));
+      setPendingVideoUrl(null); // ניקוי ה-Preview במקרה של כשל
+    }
+  });
+};
 
   const handleDelete = (postId) => {
     $.ajax({
@@ -199,7 +217,17 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
               {showCanvas ? "Close" : "Add Drawing"}
             </button>
             <label htmlFor="video-upload" style={{ cursor: 'pointer', padding: '8px 16px', background: '#6c757d', color: '#fff', borderRadius: '20px' }}>Upload Video</label>
-            <input type="file" id="video-upload" onChange={(e) => handleVideoUpload(e.target.files[0])} style={{ display: 'none' }} />
+            <input 
+                type="file" 
+                id="video-upload" 
+                accept="video/*" 
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) {
+                    handleVideoUpload(e.target.files[0]);
+                  }
+                }} 
+                style={{ display: 'none' }} 
+              />
             
             <button type="submit" style={{ marginLeft: 'auto', padding: '8px 24px', background: '#9370DB', color: '#fff', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>
               Post
