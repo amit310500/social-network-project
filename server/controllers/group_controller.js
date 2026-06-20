@@ -179,6 +179,20 @@ const getGroupById = async (req, res) => {
     }
 };
 
+const getGroupMembers = async (req, res) => {
+    try {
+        // מציאת הקבוצה לפי ID ושליפת המשתמשים המלאים מתוך ה-members
+        const group = await Group.findById(req.params.groupId)
+                                 .populate('members', 'username email'); // מחזיר רק שם ואימייל
+
+        if (!group) return res.status(404).send({ message: "Group not found" });
+
+        res.json(group.members); // מחזיר רק את רשימת המשתמשים
+    } catch (error) {
+        res.status(500).send({ message: "Error fetching members" });
+    }
+};
+
 module.exports = { 
     createGroup, 
     getAllGroups,
@@ -189,5 +203,6 @@ module.exports = {
     approveMember,
     getGroupRequests,
     getGroupDetails,
-    getGroupById
+    getGroupById,
+    getGroupMembers
 };

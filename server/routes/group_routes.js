@@ -25,4 +25,7 @@ router.get('/:groupId/requests', authMiddleware, groupController.getGroupRequest
 // בתוך group_routes.js, הוסיפי את השורה הזו:
 router.get('/:id', auth, groupController.getGroupById);
 
+// בתוך קובץ ה-Routes של הקבוצות
+router.get('/:groupId/members', auth, groupController.getGroupMembers);
+
 module.exports = router;

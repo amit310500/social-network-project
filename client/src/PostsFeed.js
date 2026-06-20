@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import $ from 'jquery';
 import VideoPost from './VideoPost';
 import CanvasEditor from './CanvasEditor';
+import GroupMembers from './GroupMembers';
 
 function PostsFeed({ user, group, currentUserId, onRefresh }) {
   const [posts, setPosts] = useState([]);
@@ -188,6 +189,8 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
 
       {/* טופס פוסט מעוצב */}
       {(isMember || isAdmin) && (
+        <>
+        <GroupMembers groupId={group._id} token={user.token} />
         <form onSubmit={handleSubmit} style={{ background: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '30px', border: '1px solid #e1e8ed' }}>
           <textarea 
             value={newPost} onChange={e => setNewPost(e.target.value)} 
@@ -195,24 +198,24 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
             style={{ width: '100%', border: 'none', resize: 'none', fontSize: '16px', outline: 'none', marginBottom: '15px' }} 
           />
           {(pendingVideoUrl || pendingDrawing) && (
-    <div style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '12px', border: '1px solid #e1e8ed' }}>
-      <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>Preview:</p>
-      {pendingVideoUrl && (
-        <div style={{ position: 'relative', display: 'inline-block' }}>
-          <video src={pendingVideoUrl} width="200" controls style={{ borderRadius: '8px' }} />
-          <button type="button" onClick={() => setPendingVideoUrl(null)} style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '25px', height: '25px' }}>×</button>
-        </div>
-      )}
-      {pendingDrawing && (
-        <div style={{ position: 'relative', display: 'inline-block' }}>
-          <img src={pendingDrawing} alt="Preview" style={{ width: '200px', borderRadius: '8px', border: '1px solid #ddd' }} />
-          <button type="button" onClick={() => setPendingDrawing(null)} style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '25px', height: '25px' }}>×</button>
-        </div>
-      )}
-    </div>
-  )}
+            <div style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '12px', border: '1px solid #e1e8ed' }}>
+              <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>Preview:</p>
+              {pendingVideoUrl && (
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <video src={pendingVideoUrl} width="200" controls style={{ borderRadius: '8px' }} />
+                  <button type="button" onClick={() => setPendingVideoUrl(null)} style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '25px', height: '25px' }}>×</button>
+                </div>
+              )}
+              {pendingDrawing && (
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <img src={pendingDrawing} alt="Preview" style={{ width: '200px', borderRadius: '8px', border: '1px solid #ddd' }} />
+                  <button type="button" onClick={() => setPendingDrawing(null)} style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '25px', height: '25px' }}>×</button>
+                </div>
+              )}
+            </div>
+         )}
           
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <button type="button" onClick={() => setShowCanvas(!showCanvas)} style={{ padding: '8px 16px', background: '#6c757d', color: '#fff', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>
               {showCanvas ? "Close" : "Add Drawing"}
             </button>
@@ -232,74 +235,116 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
             <button type="submit" style={{ marginLeft: 'auto', padding: '8px 24px', background: '#9370DB', color: '#fff', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>
               Post
             </button>
-          </div>
-          {showCanvas && <div style={{ marginTop: '20px' }}><CanvasEditor onSave={(d) => { setPendingDrawing(d); setShowCanvas(false); }} /></div>}
+        </div>
+        {showCanvas && <div style={{ marginTop: '20px' }}><CanvasEditor onSave={(d) => { setPendingDrawing(d); setShowCanvas(false); }} /></div>}
         </form>
+        </>
       )}
 
       {/* רשימת פוסטים */}
       <div>
         {(isMember || isAdmin) ? (
-          // אם הוא חבר - מציגים את הפוסטים
-          posts.map(post => (
-            <div key={post._id} style={{ background: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e1e8ed' }}>
-              <p><strong>{post.sender?.username}</strong></p>
-              <p>{post.content}</p>
-              {post.mediaUrl && (
-                <div style={{ 
-                  maxWidth: '300px', // רוחב מקסימלי מוקטן (כמו בתמונה)
-                  width: '100%', 
-                  margin: '10px 0',
-                  borderRadius: '8px',
-                  overflow: 'hidden' // מוודא שהסרטון לא חורג מהפינות המעוגלות
-                }}>
-                  <VideoPost videoUrl={post.mediaUrl} />
-                </div>
-            )}
-              {post.drawing && post.drawing.startsWith("data:image/") && <img 
-                src={post.drawing} alt="post" style={{ 
-                    maxWidth: '300px', // גודל מוקטן
-                    width: '100%', 
-                    height: 'auto', 
-                    display: 'block', 
-                    margin: '10px 0', 
+          posts.length > 0 ? (
+            posts.map(post => (
+              <div key={post._id} style={{ background: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e1e8ed' }}>
+                <p><strong>{post.sender?.username}</strong></p>
+                <p>{post.content}</p>
+
+                {post.mediaUrl && (
+                  <div style={{
+                    maxWidth: '300px',
+                    width: '100%',
+                    margin: '10px 0',
                     borderRadius: '8px',
-                    border: '1px solid #eee'
-                }}  
-              />}
-              <small style={{ color: '#888' }}>{new Date(post.createdAt).toLocaleString()}</small>
-              
-              {(post.sender?._id === currentUserId || isAdmin) && (
-                <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-                  <button onClick={() => handleUpdate(post._id, post.content)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #9370DB', color: '#9370DB', background: '#fff' }}>Edit</button>
-                  <button onClick={() => handleDelete(post._id)} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #dc3545', color: '#dc3545', background: '#fff' }}>Delete</button>
-                </div>
-              )}
+                    overflow: 'hidden'
+                  }}>
+                    <VideoPost videoUrl={post.mediaUrl} />
+                  </div>
+                )}
+
+                {post.drawing && post.drawing.startsWith("data:image/") && (
+                  <img
+                    src={post.drawing}
+                    alt="post"
+                    style={{
+                      maxWidth: '300px',
+                      width: '100%',
+                      height: 'auto',
+                      display: 'block',
+                      margin: '10px 0',
+                      borderRadius: '8px',
+                      border: '1px solid #eee'
+                    }}
+                  />
+                )}
+
+                <small style={{ color: '#888' }}>
+                  {new Date(post.createdAt).toLocaleString()}
+                </small>
+
+                {(post.sender?._id === currentUserId || isAdmin) && (
+                  <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+                    <button
+                      onClick={() => handleUpdate(post._id, post.content)}
+                      style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #9370DB', color: '#9370DB', background: '#fff' }}
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(post._id)}
+                      style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #dc3545', color: '#dc3545', background: '#fff' }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#888', background: '#fff', borderRadius: '12px', border: '1px solid #e1e8ed' }}>
+              <p>No posts in this group yet.</p>
             </div>
-          ))
+          )
         ) : (
-  <div style={{ 
-    textAlign: 'center', padding: '20px', background: '#fff3cd', 
-    color: '#856404', borderRadius: '12px', border: '1px solid #ffeeba', marginBottom: '20px' 
-  }}>
-    <h3>This group is private</h3>
-    
-    {/* בדיקה אם המשתמש כבר ביקש להצטרף */}
-    {group.pendingRequests?.some(req => req._id === currentUserId) ? (
-      <p style={{ fontWeight: 'bold' }}>
-        Your request to join is pending approval from the admin.
-      </p>
-    ) : (
-      <div>
-        <p>You must be a member to view the posts in this group.</p>
-        <button onClick={handleJoinRequest} style={{ background: '#28a745', color: '#fff', padding: '8px 16px', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>
-          Request to Join
-        </button>
+          <div style={{
+            textAlign: 'center',
+            padding: '20px',
+            background: '#fff3cd',
+            color: '#856404',
+            borderRadius: '12px',
+            border: '1px solid #ffeeba',
+            marginBottom: '20px'
+          }}>
+            <h3>This group is private</h3>
+
+            {group.pendingRequests?.some(req => req._id === currentUserId) ? (
+              <p style={{ fontWeight: 'bold' }}>
+                Your request to join is pending approval from the admin.
+              </p>
+            ) : (
+              <div>
+                <p>You must be a member to view the posts in this group.</p>
+
+                <button
+                  onClick={handleJoinRequest}
+                  style={{
+                    background: '#28a745',
+                    color: '#fff',
+                    padding: '8px 16px',
+                    border: 'none',
+                    borderRadius: '20px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Request to Join
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    )}
-  </div>
-)}
-        </div>
+
       </div>
     </div>
   );

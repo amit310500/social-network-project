@@ -6,6 +6,7 @@ import GroupList from './GroupList';
 import PostsFeed from './PostsFeed';
 import MyFeed from './MyFeed';
 import GroupStats from './GroupStats';
+import Profile from './Profile'; // הוספנו את הייבוא
 import { FaHome } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 
@@ -18,7 +19,7 @@ function App() {
   const [stats, setStats] = useState({ postsByMonth: [], postsByGroup: [] });
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // פונקציה לרענון נתוני הקבוצה מהשרת (ללא רענון דף)
+  // פונקציה לרענון נתוני הקבוצה מהשרת
   const refreshSelectedGroup = () => {
     if (!selectedGroup) return;
     $.ajax({
@@ -26,22 +27,19 @@ function App() {
       method: 'GET',
       headers: { 'Authorization': 'Bearer ' + user.token },
       success: (updatedGroup) => {
-        // הוספנו כאן את ה-updatedGroup בשינוי אובייקט חדש
-        // כדי לוודא ש-React יזהה שינוי ויבצע Render מחדש
         setSelectedGroup(prev => ({ ...prev, ...updatedGroup })); 
       },
       error: (err) => console.error("Error refreshing group", err)
     });
   };
 
- useEffect(() => {
+  useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       setIsLoading(false);
       return;
     }
     
-    // 1. קריאה להבאת נתוני המשתמש
     $.ajax({
       url: 'http://localhost:5001/api/users/me',
       headers: { 'Authorization': 'Bearer ' + token },
@@ -49,12 +47,10 @@ function App() {
         setUser({ ...userData, token });
         setIsLoading(false);
 
-        // 2. קריאה להבאת הסטטיסטיקה
         $.ajax({
             url: 'http://localhost:5001/api/posts/stats',
             headers: { 'Authorization': 'Bearer ' + token },
             success: (data) => {
-                console.log("Stats received:", data); // כאן ה-data קיים ותקין!
                 setStats(data);
             },
             error: (err) => console.error("Error fetching stats", err)
@@ -67,7 +63,6 @@ function App() {
     });
   }, []);
 
-
   const handleLogout = () => {
     localStorage.removeItem('token'); 
     setUser(null);
@@ -77,12 +72,11 @@ function App() {
 
   const handleGroupSelect = (group) => {
     setViewMode('group');
-    // במקום רק לעדכן state, נמשוך מהשרת עם ה-populate המלא!
     $.ajax({
       url: `http://localhost:5001/api/groups/${group._id}`,
       headers: { 'Authorization': 'Bearer ' + user.token },
       success: (fullGroupData) => {
-        setSelectedGroup(fullGroupData); // עכשיו ה-group ב-State מכיל את המידע המלא עם ה-populate
+        setSelectedGroup(fullGroupData);
       }
     });
   };
@@ -114,8 +108,14 @@ function App() {
                     setSelectedGroup(null);
                   }} 
                   title="Go to Dashboard"
-                />
+              />
               <span>Welcome, <strong>{user.username}</strong></span>
+              {/* כפתור למעבר לפרופיל */}
+              <span 
+                onClick={() => setViewMode('profile')} 
+                style={{ cursor: 'pointer', marginRight: '20px', textDecoration: 'underline', marginLeft: '10px' }}>
+                My Profile
+              </span>
             </div>
             
             <FiLogOut 
@@ -123,7 +123,7 @@ function App() {
                 style={{ cursor: 'pointer', color: '#ff4d4d' }} 
                 onClick={handleLogout} 
                 title="Logout"
-              />
+            />
           </header>
           
           <main style={{ display: 'flex', gap: '25px', padding: '25px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -133,12 +133,9 @@ function App() {
                   onSelectGroup={handleGroupSelect} 
                   onShowMyFeed={handleShowMyFeed}
                   onDeleteSuccess={() => {
-                    // 1. חזרה לדאשבורד
                     setViewMode('dashboard');
                     setSelectedGroup(null);
-                    
                     setRefreshKey(prev => prev + 1);
-                    // 2. רענון הסטטיסטיקות מהשרת (כדי שהגרפים יתעדכנו)
                     const token = localStorage.getItem('token');
                     $.ajax({
                       url: 'http://localhost:5001/api/posts/stats',
@@ -150,17 +147,19 @@ function App() {
             </div>
 
             <div style={{ flex: '2', background: '#fff', borderRadius: '15px', padding: '20px', minHeight: '400px' }}>
-              {viewMode === 'my-feed' ? (
+              {viewMode === 'profile' ? (
+                <Profile user={user} onLogout={handleLogout} />
+              ) : viewMode === 'my-feed' ? (
                 <MyFeed key={refreshKey} user={user} currentUserId={user._id} />
               ) : viewMode === 'group' && selectedGroup ? (
                 <>
                   <h2>{selectedGroup.name}</h2> 
                   <PostsFeed 
-                      key={selectedGroup._id} // שימוש ב-ID כמפתח מבטיח רינדור רק כשבוחרים קבוצה חדשה
+                      key={selectedGroup._id}
                       user={user} 
                       group={selectedGroup} 
                       currentUserId={user._id}
-                      onRefresh={refreshSelectedGroup} // רק הפונקציה הזו!
+                      onRefresh={refreshSelectedGroup} 
                   />
                 </>
               ) : (

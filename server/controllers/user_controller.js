@@ -83,4 +83,49 @@ const getMe = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getMe };
+// Update User (עדכון פרטי משתמש - שם משתמש או אימייל)
+const updateUser = async (req, res) => {
+    try {
+        const { username, email } = req.body;
+        
+        // עדכון המשתמש לפי ה-ID שהגיע מהפרמטרים של ה-URL
+        const updatedUser = await User.findByIdAndUpdate(
+            req.params.id, 
+            { username, email }, 
+            { new: true, runValidators: true }
+        ).select('-password'); // לא להחזיר את הסיסמה בטעות
+
+        if (!updatedUser) {
+            return res.status(404).send({ message: "User not found" });
+        }
+
+        res.send(updatedUser);
+    } catch (error) {
+        console.error("Update User Error:", error);
+        res.status(400).send({ message: "Update failed", error: error.message });
+    }
+};
+
+// Delete User (מחיקת משתמש)
+const deleteUser = async (req, res) => {
+    try {
+        const deletedUser = await User.findByIdAndDelete(req.params.id);
+        
+        if (!deletedUser) {
+            return res.status(404).send({ message: "User not found" });
+        }
+
+        res.send({ message: "User deleted successfully" });
+    } catch (error) {
+        console.error("Delete User Error:", error);
+        res.status(500).send({ message: "Delete failed", error: error.message });
+    }
+};
+
+module.exports = { 
+    register, 
+    login, 
+    getMe,
+    updateUser,
+    deleteUser
+};
