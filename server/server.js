@@ -64,8 +64,17 @@ mongoose.connection.on('error', err => {
 io.on('connection', (socket) => {
   console.log('👤 New User Connected:', socket.id);
   
+  // משתמש מצטרף לחדר ספציפי של הקבוצה
+  socket.on('join_group', (groupId) => {
+    socket.join(groupId); 
+    console.log(`User ${socket.id} joined group: ${groupId}`);
+  });
+
+  // שליחת הודעה רק לחברים בחדר של הקבוצה
   socket.on('send_message', (data) => {
-    io.emit('receive_message', data); 
+    // data צפוי להיות אובייקט עם { groupId, text, senderName }
+    // אנחנו שולחים את ההודעה רק למי שנמצא בחדר הספציפי הזה
+    io.to(data.groupId).emit('receive_message', data); 
   });
 
   socket.on('disconnect', () => {

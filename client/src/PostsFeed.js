@@ -5,6 +5,8 @@ import CanvasEditor from './CanvasEditor';
 import GroupMembers from './GroupMembers';
 import UserSearch from './UserSearch';
 import PostSearch from './PostSearch';
+import Chat from './Chat'; // תוסיפי למעלה עם שאר ה-Imports
+import socket from './socket';
 
 function PostsFeed({ user, group, currentUserId, onRefresh }) {
   const [posts, setPosts] = useState([]);
@@ -178,7 +180,7 @@ return (
       
       {/* תפריט הניווט הפנימי (ללא searchPosts) */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', background: '#fff', padding: '10px', borderRadius: '12px' }}>
-        {['feed', 'searchUsers', 'members'].map(tab => (
+        {['feed', 'searchUsers', 'members', 'chat'].map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -301,6 +303,11 @@ return (
       {/* 3. טאב חברים */}
       {activeTab === 'members' && (
         <GroupMembers groupId={group._id} token={user.token} />
+      )}
+
+      {/* 4. טאב צאט */}
+      {activeTab === 'chat' && (
+        <Chat groupId={group._id} user={user} />
       )}
 
     </div>
