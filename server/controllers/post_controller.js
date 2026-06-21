@@ -100,28 +100,46 @@ const searchPosts = async (req, res) => {
         const { text, username, startDate, groupId } = req.query;
         let query = {};
 
-        // סינון חובה לפי קבוצה
+        // 1. סינון חובה לפי קבוצה
         if (groupId) query.group = groupId; 
         
-        // סינון לפי טקסט
-        if (text) query.content = { $regex: text, $options: 'i' }; 
-        
-        // סינון לפי תאריך
-        if (startDate) query.createdAt = { $gte: new Date(startDate) };
+        // 2. סינון לפי תאריך ספציפי (טיפול בטווח של יום שלם)
+        if (startDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0); // תחילת היום (00:00:00)
+            
+            const end = new Date(startDate);
+            end.setHours(23, 59, 59, 999); // סוף היום (23:59:59)
+            
+            query.createdAt = { 
+                $gte: start, 
+                $lte: end 
+            };
+        }
 
-        // שליפה
+        // 3. סינון לפי טקסט
+        // אם המשתמש כתב טקסט, נחפש אותו ב-content. 
+        // בגלל ששאר הפילטרים (קבוצה ותאריך) נמצאים ב-query, 
+        // פוסטים ללא טקסט שנוצרו בתאריך הזה עדיין יופיעו בתוצאות.
+        if (text) {
+            query.content = { $regex: text, $options: 'i' };
+        }
+
+        // 4. שליפה מה-DB
         let posts = await Post.find(query)
             .populate('sender', 'username')
             .sort({ createdAt: -1 });
         
-        // סינון שם משתמש בצד השרת
+        // 5. סינון שם משתמש בצד השרת (מכיוון שזה Populate)
         if (username) {
             posts = posts.filter(post => 
                 post.sender && post.sender.username.toLowerCase().includes(username.toLowerCase())
             );
         }
+        
         res.status(200).json(posts);
     } catch (err) {
+        console.error("Search error:", err);
         res.status(500).json({ message: "Search failed", error: err.message });
     }
 };
