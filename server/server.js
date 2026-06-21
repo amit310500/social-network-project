@@ -9,6 +9,8 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
 
+const Message = require('./models/Message');
+
 const app = express();
 const server = http.createServer(app);
 
@@ -71,12 +73,14 @@ io.on('connection', (socket) => {
   });
 
   // שליחת הודעה רק לחברים בחדר של הקבוצה
-  socket.on('send_message', (data) => {
-    // data צפוי להיות אובייקט עם { groupId, text, senderName }
-    // אנחנו שולחים את ההודעה רק למי שנמצא בחדר הספציפי הזה
-    io.to(data.groupId).emit('receive_message', data); 
-  });
+  socket.on('send_message', async (data) => {
+    // 1. שמירה ב-DB
+    const newMessage = new Message(data);
+    await newMessage.save();
 
+    // 2. שליחה בזמן אמת לכולם בחדר
+    io.to(data.groupId).emit('receive_message', data);
+});
   socket.on('disconnect', () => {
     console.log('🔌 User disconnected:', socket.id);
   });
@@ -89,6 +93,15 @@ app.use((err, req, res, next) => {
         error: 'Something went wrong!',
         message: err.message 
     });
+});
+
+app.get('/api/messages/:groupId', async (req, res) => {
+    try {
+        const messages = await Message.find({ groupId: req.params.groupId }).sort({ createdAt: 1 });
+        res.json(messages);
+    } catch (err) {
+        res.status(500).send("Error fetching messages");
+    }
 });
 
 // 6. Start Server
