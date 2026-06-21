@@ -172,7 +172,6 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
     });
   };
 
-
 return (
   <div style={{ flex: 1, padding: '20px', background: '#f4f7f6', minHeight: '100vh' }}>
     <div style={{ maxWidth: '650px', margin: '0 auto' }}>

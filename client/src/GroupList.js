@@ -60,6 +60,24 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
     }
   };
 
+  const handleEditGroupName = (groupId, currentName) => {
+    const newName = prompt("Enter new group name:", currentName);
+    // בדיקה שהשם שונה ולא ריק
+    if (!newName || newName === currentName || !newName.trim()) return;
+
+    $.ajax({
+      url: `http://localhost:5001/api/groups/${groupId}`,
+      method: 'PUT',
+      contentType: 'application/json',
+      headers: { 'Authorization': 'Bearer ' + token },
+      data: JSON.stringify({ name: newName }),
+      success: () => {
+              fetchGroups(); 
+      },
+      error: (err) => alert("Failed to update: " + err.responseText)
+    });
+  };
+
   return (
     <div style={{ width: '280px', height: '100vh', background: '#ffffff', borderRight: '1px solid #e0e0e0', padding: '20px', display: 'flex', flexDirection: 'column' }}>
       <button 
@@ -100,8 +118,22 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
               👥 {g.name}
             </span>
 
-            {/* כפתור מחיקה - יופיע רק אם המשתמש הוא המנהל של הקבוצה */}
+            {/* כפתור מחיקה/עריכה - יופיע רק אם המשתמש הוא המנהל של הקבוצה */}
             {user && g.admin?._id === user._id && (
+              
+              <div style={{ display: 'flex', gap: '8px' }}> {/* כאן הוספנו את ה-gap */}
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation(); 
+                  handleEditGroupName(g._id, g.name);
+                }}
+                style={{
+                  padding: '6px 10px', borderRadius: '8px', border: '1px solid #9370DB',
+                  background: '#ffffff', color: '#9370DB', cursor: 'pointer', fontWeight: '600'
+                }}
+              >
+                Edit
+              </button>
               <button 
                       onClick={(e) => {
                         e.stopPropagation(); 
@@ -115,7 +147,8 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
                       //onMouseOut={(e) => { e.target.style.background = '#ffffff'; e.target.style.color = '#dc3545'; }}
                     >
                       Delete
-                    </button>
+              </button>
+              </div>
             )}
           </div>
         ))}

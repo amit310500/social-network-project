@@ -28,4 +28,6 @@ router.get('/:id', auth, groupController.getGroupById);
 // בתוך קובץ ה-Routes של הקבוצות
 router.get('/:groupId/members', auth, groupController.getGroupMembers);
 
+router.put('/:id', auth, groupController.updateGroup);
+
 module.exports = router;

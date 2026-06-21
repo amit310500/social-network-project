@@ -30,30 +30,7 @@ const getAllGroups = async (req, res) => {
         res.status(500).send({ message: "Error fetching groups", error: error.message });
     }
     
-};
-
-// 3. עדכון קבוצה - עם הגנה מפני גישה לא מורשית
-const updateGroup = async (req, res) => {
-    try {
-        const group = await Group.findById(req.params.id);
-        if (!group) return res.status(404).send({ message: "Group not found" });
-
-        if (group.admin.toString() !== req.user.id) {
-            return res.status(403).send({ message: "Permission denied" });
-        }
-
-        // מניעת דריסה של admin או members בטעות דרך req.body
-        const { name, isPrivate } = req.body;
-        const updatedGroup = await Group.findByIdAndUpdate(
-            req.params.id, 
-            { $set: { name, isPrivate } }, 
-            { new: true }
-        );
-        res.status(200).send(updatedGroup);
-    } catch (error) {
-        res.status(400).send({ message: "Update failed", error: error.message });
-    }
-};
+}
 
 // 4. הצטרפות לקבוצה
 const joinGroup = async (req, res) => {
@@ -193,10 +170,31 @@ const getGroupMembers = async (req, res) => {
     }
 };
 
+// controllers/groupController.js
+const updateGroup = async (req, res) => {
+    try {
+        const { name } = req.body;
+        // מציאת הקבוצה לפי ה-ID ועדכון השם
+        const updatedGroup = await Group.findByIdAndUpdate(
+            req.params.id, 
+            { name }, 
+            { new: true }
+        );
+        
+        if (!updatedGroup) {
+            return res.status(404).json({ message: "Group not found" });
+        }
+        
+        res.status(200).json(updatedGroup);
+    } catch (err) {
+        console.error("Update error:", err);
+        res.status(500).json({ message: "Failed to update group name" });
+    }
+};
+
 module.exports = { 
     createGroup, 
     getAllGroups,
-    updateGroup,
     joinGroup, 
     deleteGroup,
     searchGroups,
@@ -204,5 +202,6 @@ module.exports = {
     getGroupRequests,
     getGroupDetails,
     getGroupById,
-    getGroupMembers
+    getGroupMembers,
+    updateGroup
 };
