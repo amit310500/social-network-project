@@ -3,10 +3,11 @@ import $ from 'jquery';
 import VideoPost from './VideoPost';
 import CanvasEditor from './CanvasEditor';
 import GroupMembers from './GroupMembers';
+import UserSearch from './UserSearch';
+import PostSearch from './PostSearch';
 
 function PostsFeed({ user, group, currentUserId, onRefresh }) {
   const [posts, setPosts] = useState([]);
-  const [searchParams, setSearchParams] = useState({ text: "", username: "", startDate: "" });
   const [newPost, setNewPost] = useState("");
   const [showCanvas, setShowCanvas] = useState(false);
   const [pendingVideoUrl, setPendingVideoUrl] = useState(null);
@@ -15,6 +16,8 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
   const token = user?.token || localStorage.getItem('token');
   const isMember = group?.members.includes(currentUserId);
   const isAdmin = group?.admin?._id === currentUserId || group?.admin === currentUserId;
+
+  const [userResults, setUserResults] = useState([]);
 
   const fetchPosts = () => {
     // השתמשי ב-token מה-localStorage אם הוא לא מגיע ב-props
@@ -187,6 +190,19 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
             </div>
           )}
 
+          {/* שילוב חיפוש המשתמשים החדש */}
+        <UserSearch token={token} onSearchResults={setUserResults} />
+        
+        {/* הצגת תוצאות חיפוש משתמשים */}
+        {userResults.length > 0 && (
+          <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #9370DB' }}>
+            <h4>Search Results:</h4>
+            {userResults.map(u => (
+              <div key={u._id} style={{ padding: '5px 0' }}>{u.username} - {u.email}</div>
+            ))}
+          </div>
+        )}
+
       {/* טופס פוסט מעוצב */}
       {(isMember || isAdmin) && (
         <>
@@ -240,6 +256,8 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
         </form>
         </>
       )}
+
+      <PostSearch token={token} groupId={group._id} onSearchResults={(data) => setPosts(data)} onClear={fetchPosts} />
 
       {/* רשימת פוסטים */}
       <div>

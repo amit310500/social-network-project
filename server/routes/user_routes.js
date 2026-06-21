@@ -20,4 +20,6 @@ router.get('/me', auth, userController.getMe);
 router.put('/:id', auth, userController.updateUser);      // עדכון
 router.delete('/:id', auth, userController.deleteUser);   // מחיקה
 
+router.get('/search/users', auth, userController.searchUsers);
+
 module.exports = router;

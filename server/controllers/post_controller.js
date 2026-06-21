@@ -98,17 +98,23 @@ const updatePost = async (req, res) => {
 const searchPosts = async (req, res) => {
     try {
         const { text, username, startDate, groupId } = req.query;
-        let query = groupId ? { group: groupId } : {};
+        let query = {};
+
+        // סינון חובה לפי קבוצה
+        if (groupId) query.group = groupId; 
         
-        // חיפוש טקסט
+        // סינון לפי טקסט
         if (text) query.content = { $regex: text, $options: 'i' }; 
-        // חיפוש תאריך
+        
+        // סינון לפי תאריך
         if (startDate) query.createdAt = { $gte: new Date(startDate) };
 
-        // שליפת פוסטים + פופולציה למציאת שם המשתמש
-        let posts = await Post.find(query).populate('sender', 'username').sort({ createdAt: -1 });
+        // שליפה
+        let posts = await Post.find(query)
+            .populate('sender', 'username')
+            .sort({ createdAt: -1 });
         
-        // סינון לפי שם משתמש בצד השרת (כפי שעשית)
+        // סינון שם משתמש בצד השרת
         if (username) {
             posts = posts.filter(post => 
                 post.sender && post.sender.username.toLowerCase().includes(username.toLowerCase())

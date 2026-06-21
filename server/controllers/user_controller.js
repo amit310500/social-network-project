@@ -122,10 +122,35 @@ const deleteUser = async (req, res) => {
     }
 };
 
+const searchUsers = async (req, res) => {
+    try {
+        const { username, email, startDate } = req.query;
+        let query = {};
+
+        // 1. חיפוש שם משתמש
+        if (username) query.username = { $regex: username, $options: 'i' };
+        
+        // 2. חיפוש אימייל
+        if (email) query.email = { $regex: email, $options: 'i' };
+        
+        // 3. חיפוש לפי תאריך הצטרפות (משתמש ב-createdAt הקיים)
+        if (startDate) {
+            query.createdAt = { $gte: new Date(startDate) };
+        }
+
+        // שליפת המשתמשים (ללא הסיסמה)
+        const users = await User.find(query).select('-password');
+        res.status(200).json(users);
+    } catch (err) {
+        res.status(500).json({ message: "Search failed", error: err.message });
+    }
+};
+
 module.exports = { 
     register, 
     login, 
     getMe,
     updateUser,
-    deleteUser
+    deleteUser,
+    searchUsers
 };
