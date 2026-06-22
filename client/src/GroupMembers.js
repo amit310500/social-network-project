@@ -52,7 +52,6 @@ function GroupMembers({ groupId, token, isAdmin, currentUserId, adminId }) {
                             <div>
                                 <div style={{ fontWeight: '600', color: '#222', display: 'flex', alignItems: 'center' }}>
                                     {member.username}
-                                    {/* הצגת תגית ADMIN אם ה-ID של המשתמש תואם ל-adminId */}
                                     {adminId && member._id.toString() === adminId.toString() && (
                                         <span style={{ 
                                             marginLeft: '8px', 
