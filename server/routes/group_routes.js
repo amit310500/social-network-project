@@ -7,6 +7,7 @@ const authMiddleware = require('../middleware/auth');
 const multer = require('multer');
 
 
+// Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -18,31 +19,37 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// קבלת כל הקבוצות (פתוח לכל משתמש מחובר)
+// Routes for Group Management
+// ---------------------------
+
+// Fetch all available groups
 router.get('/', auth, groupController.getAllGroups); 
 
-// יצירת קבוצה חדשה (פתוח לכל משתמש מחובר)
+// Create a new group
 router.post('/', auth, groupController.createGroup);
 
-// הצטרפות לקבוצה (פתוח לכל משתמש מחובר)
+// Request to join a specific group
 router.post('/:id/join', auth, groupController.joinGroup);
 
-// מחיקת קבוצה - הוספנו כאן את isGroupAdmin כדי שרק המנהל יוכל למחוק
+// Delete a group (Restricted to group admin only)
 router.delete('/:id', auth, isGroupAdmin, groupController.deleteGroup);
 
+// Remove a member from a group
 router.delete('/:groupId/member/:memberId', auth, groupController.removeMember);
 
-// אישור חבר בקבוצה - כבר היה מוגן ע"י isGroupAdmin
+// Approve a pending join request (Restricted to group admin only)
 router.post('/:groupId/approve/:memberId', auth, isGroupAdmin, groupController.approveMember);
 
+// Fetch pending join requests
 router.get('/:groupId/requests', authMiddleware, groupController.getGroupRequests);
 
-// בתוך group_routes.js, הוסיפי את השורה הזו:
+// Fetch group details by ID
 router.get('/:id', auth, groupController.getGroupById);
 
-// בתוך קובץ ה-Routes של הקבוצות
+// Fetch all members of a specific group
 router.get('/:groupId/members', auth, groupController.getGroupMembers);
 
+// Update group information
 router.put('/:id', auth, groupController.updateGroup);
 
 module.exports = router;

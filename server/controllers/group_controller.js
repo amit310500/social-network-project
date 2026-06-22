@@ -1,7 +1,7 @@
 const Group = require('../models/Group');
 const Post = require('../models/Post');
 
-// 1. יצירת קבוצה חדשה - עם הגנה על נתוני משתמש
+// 1. Create a new group and assign the creator as admin and first member
 const createGroup = async (req, res) => {
     try {
         const { name } = req.body;
@@ -19,7 +19,7 @@ const createGroup = async (req, res) => {
     }
 };
 
-// 2. משיכת כל הקבוצות
+// 2. Retrieve all groups, sorted by creation date
 const getAllGroups = async (req, res) => {
     try {
         const groups = await Group.find()
@@ -32,13 +32,12 @@ const getAllGroups = async (req, res) => {
     
 }
 
-// 4. הצטרפות לקבוצה
+// 3. Request to join a private group
 const joinGroup = async (req, res) => {
     try {
         const group = await Group.findById(req.params.id);
         if (!group) return res.status(404).send({ message: "Group not found" });
 
-        // הבדיקה הקריטית: אם השדה לא מערך, נאפס אותו למערך ריק
         if (!Array.isArray(group.pendingRequests)) {
             group.pendingRequests = []; 
         }
@@ -56,12 +55,13 @@ const joinGroup = async (req, res) => {
     }
 };
 
-// 5. מחיקת קבוצה
+// 4. Delete a group and all associated posts
 const deleteGroup = async (req, res) => {
     try {
         const group = await Group.findById(req.params.id);
         if (!group) return res.status(404).send({ message: "Group not found" });
 
+        // Authorization check: only admin can delete
         if (group.admin.toString() !== req.user.id && req.user.role !== 'admin') {
             return res.status(403).send({ message: "Not authorized to delete" });
         }
@@ -74,7 +74,7 @@ const deleteGroup = async (req, res) => {
     }
 };
 
-// 6. חיפוש קבוצה מתקדם
+// 5. Advanced search for groups based on query parameters
 const searchGroups = async (req, res) => {
     try {
         const { name, description, isPrivate } = req.query;
@@ -90,17 +90,18 @@ const searchGroups = async (req, res) => {
     }
 };
 
+// 6. Approve a member's join request
 const approveMember = async (req, res) => {
     try {
         const { groupId, memberId } = req.params;
         const group = await Group.findById(groupId);
         
-        // מוודאים שהוא באמת בממתינים
+        // Make sure it is really pending
         if (!group.pendingRequests.includes(memberId)) {
             return res.status(400).send({ message: "No join request found for this user" });
         }
 
-        // העברה
+        // Move user from pending to members list
         group.pendingRequests = group.pendingRequests.filter(id => id.toString() !== memberId);
         group.members.push(memberId);
         
@@ -111,23 +112,23 @@ const approveMember = async (req, res) => {
     }
 };
 
+// 7. Fetches the list of pending join requests for a specific group
+// Ensures only the group admin can view these sensitive requests
 const getGroupRequests = async (req, res) => {
     try {
         const group = await Group.findById(req.params.groupId);
-        // בדיקה האם המשתמש המחובר הוא המנהל
         if (group.adminId.toString() !== req.user.id) {
             return res.status(403).json({ message: "Only admin can view requests" });
         }
-        res.json(group.requests); // מחזיר את רשימת הממתינים
+        res.json(group.requests); 
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 };
 
-// הוסף פונקציה זו ב-group_controller.js או עדכן את הפונקציה ששולפת את הקבוצה
+// 8. Get details of a group, including populated pending requests
 const getGroupDetails = async (req, res) => {
     try {
-        // שימוש ב-populate כדי לקבל את פרטי המשתמשים שממתינים
         const group = await Group.findById(req.params.id)
             .populate('admin', 'username')
             .populate('pendingRequests', 'username'); 
@@ -139,13 +140,13 @@ const getGroupDetails = async (req, res) => {
     }
 };
 
+// 9. Fetches a full group object by ID, populating admin and pending request details
 const getGroupById = async (req, res) => {
     try {
         const group = await Group.findById(req.params.id)
             .populate('admin', 'username')
             .populate('pendingRequests', 'username'); 
         
-        // הדפסה לטרמינל בשרת - זה השלב הכי חשוב!
         console.log("DEBUG: Group found in DB:", JSON.stringify(group, null, 2));
 
         if (!group) return res.status(404).json({ message: "Group not found" });
@@ -156,25 +157,24 @@ const getGroupById = async (req, res) => {
     }
 };
 
+// 10. Fetch group members with user details
 const getGroupMembers = async (req, res) => {
     try {
-        // מציאת הקבוצה לפי ID ושליפת המשתמשים המלאים מתוך ה-members
         const group = await Group.findById(req.params.groupId)
-                                 .populate('members', 'username email'); // מחזיר רק שם ואימייל
+                                 .populate('members', 'username email'); 
 
         if (!group) return res.status(404).send({ message: "Group not found" });
 
-        res.json(group.members); // מחזיר רק את רשימת המשתמשים
+        res.json(group.members); 
     } catch (error) {
         res.status(500).send({ message: "Error fetching members" });
     }
 };
 
-// controllers/groupController.js
+// 11. Update group metadata (name)
 const updateGroup = async (req, res) => {
     try {
         const { name } = req.body;
-        // מציאת הקבוצה לפי ה-ID ועדכון השם
         const updatedGroup = await Group.findByIdAndUpdate(
             req.params.id, 
             { name }, 
@@ -191,20 +191,21 @@ const updateGroup = async (req, res) => {
         res.status(500).json({ message: "Failed to update group name" });
     }
 };
+
+// 12. Remove a member from the group (Admin only)
 const removeMember = async (req, res) => {
     try {
         const { groupId, memberId } = req.params;
-        const currentUserId = req.user.id; // המשתמש המחובר
+        const currentUserId = req.user.id; 
 
         const group = await Group.findById(groupId);
         if (!group) return res.status(404).json({ message: "Group not found" });
 
-        // בדיקה: האם המשתמש המחובר הוא המנהל?
         if (group.admin.toString() !== currentUserId) {
             return res.status(403).json({ message: "Only the admin can remove members" });
         }
 
-        // הסרת המשתמש מהמערך (pull)
+        // Removing the user from the array
         group.members = group.members.filter(m => m.toString() !== memberId);
         await group.save();
 

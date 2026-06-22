@@ -1,13 +1,19 @@
 const mongoose = require('mongoose');
 
+/**
+ * Post Schema: Defines the structure for posts within the application.
+ * Utilizes references to 'User' and 'Group' for relational data integrity
+ * and includes timestamps for statistical analysis.
+ */
+
 const postSchema = new mongoose.Schema({
-    // קישור למודל המשתמש - קריטי לניהול הרשאות (מי יכול למחוק/לערוך)
+    // Reference to the User who created the post
     sender: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'User', 
         required: true 
     },
-    group: { // <-- השדה החדש שמקשר לקבוצה
+    group: { 
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Group',
         required: true 
@@ -21,7 +27,6 @@ const postSchema = new mongoose.Schema({
         type: Boolean, 
         default: false 
     },
-    // שדה למדיה (תמונה/וידאו) - דרישה טכנית בפרויקט
     mediaUrl: { 
         type: String, 
         default: "" 
@@ -30,13 +35,8 @@ const postSchema = new mongoose.Schema({
         type: String,
      },
 
-    // שדות שיעזרו לך להפיק גרפים ב-D3.js בהמשך
-    likes: [{ 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: 'User' 
-    }]
 }, { 
-    // מוסיף אוטומטית createdAt ו-updatedAt בצורה תקנית
+    // Automatically manage createdAt and updatedAt fields
     timestamps: true 
 });
 

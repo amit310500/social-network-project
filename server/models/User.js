@@ -1,18 +1,23 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+/**
+ * User Schema: Defines the user structure.
+ * Includes security measures like password hashing and role-based access.
+ */
+
 const userSchema = new mongoose.Schema({
     username: { 
         type: String, 
         required: true, 
         unique: true,
-        trim: true // מומלץ: מנקה רווחים מיותרים
+        trim: true 
     },
     email: { 
         type: String, 
         required: true, 
         unique: true,
-        lowercase: true, // שומר את המייל תמיד באותיות קטנות למניעת כפילויות
+        lowercase: true, 
         trim: true 
     },
     password: { 
@@ -24,26 +29,25 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'], 
         default: 'user' 
     },
-    groups: [{ 
+    groups: [{  // Reference to groups the user belongs to
         type: mongoose.Schema.Types.ObjectId, 
         ref: 'Group' 
     }]
-}, { timestamps: true }); // מוסיף אוטומטית שדות createdAt ו-updatedAt
+}, { timestamps: true }); 
 
-// --- התיקון הקריטי כאן ---
-// הצפנת הסיסמה לפני השמירה ב-DB
+// Hash the password before saving to the database
 userSchema.pre('save', async function() {
-    // אם הסיסמה לא שונתה (למשל בעדכון פרופיל), אל תצפין אותה שוב
+    // Skip hashing if the password field was not modified
     if (!this.isModified('password')) {
         return; 
     }
 
     try {
+        // Generate salt and hash the password
         const salt = await bcrypt.genSalt(10);
         this.password = await bcrypt.hash(this.password, salt);
-        // אין צורך ב-next() כי זו פונקציית async
     } catch (error) {
-        throw error; // זורקים את השגיאה ו-Mongoose יטפל בה
+        throw error; 
     }
 });
 

@@ -9,7 +9,6 @@ function Login({ onLoginSuccess, onRegisterClick }) {
         e.preventDefault();
         
         $.ajax({
-            // חשוב: להוסיף את הפורט המלא של ה-Backend
             url: 'http://localhost:5001/api/users/login', 
             method: 'POST',
             contentType: 'application/json',
@@ -17,10 +16,11 @@ function Login({ onLoginSuccess, onRegisterClick }) {
             success: (response) => {
                 console.log("Login successful, user data:", response);
     
-                // שמירת הטוקן ב-localStorage כדי שהדפדפן "יזכור" אותו
+                // Save JWT token to local storage for persistent session
                 if (response.token) {
                     localStorage.setItem('token', response.token); 
                 }
+                // Trigger parent callback to update user state
                 onLoginSuccess(response);
                 
                 alert("Welcome, " + response.username + "!");

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import $ from 'jquery';
 
+// Sends a search request to the backend with the provided filter
 function UserSearch({ token, onSearchResults }) {
   const [params, setParams] = useState({ username: "", email: "", startDate: "" });
 
@@ -12,7 +13,7 @@ function UserSearch({ token, onSearchResults }) {
       data: params,
       success: (data) => {
         console.log("Search results:", data);
-        onSearchResults(data); // מעביר את התוצאות לקומפוננטת האב
+        onSearchResults(data); // Pass results back to the parent component
       },
       error: (err) => {
         alert("Search failed: " + (err.responseJSON?.message || "Check console"));
@@ -45,7 +46,6 @@ function UserSearch({ token, onSearchResults }) {
   );
 }
 
-// עיצובים קלים
 const inputStyle = { padding: '8px', borderRadius: '6px', border: '1px solid #ccc' };
 const buttonStyle = { padding: '8px 16px', background: '#9370DB', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' };
 

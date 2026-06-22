@@ -7,7 +7,8 @@ function GroupStats({ data, type }) {
   useEffect(() => {
     if (!data || data.length === 0) return;
     
-    let processedData = [...data].sort((a, b) => b.count - a.count); // מיון מהגבוה לנמוך
+    // Sort and limit data to show only top 5 + "Others"
+    let processedData = [...data].sort((a, b) => b.count - a.count); 
     
     if (processedData.length > 5) {
       const top5 = processedData.slice(0, 5);
@@ -24,12 +25,10 @@ function GroupStats({ data, type }) {
         const chartWidth = width - margin.left - margin.right;
         const chartHeight = height - margin.top - margin.bottom;
 
-        // 1. מיון וסינון ל-5 החודשים האחרונים
-        // נניח שהחודשים ב-DB הם בסדר כרונולוגי או שניתן למיין אותם
+        // Take last 5 months for the bar chart
         const filteredData = [...data]
-            .slice(-5); // לוקח את ה-5 האחרונים במערך
+            .slice(-5); 
 
-        // הגדרת סקאלות מבוססות על הנתונים המסוננים
         const xScale = d3.scaleBand()
             .domain(filteredData.map(d => d.month))
             .range([0, chartWidth])
@@ -42,7 +41,6 @@ function GroupStats({ data, type }) {
         const g = svg.append("g")
             .attr("transform", `translate(${margin.left}, ${margin.top})`);
 
-        // הוספת צירים
         g.append("g")
             .attr("transform", `translate(0, ${chartHeight})`)
             .call(d3.axisBottom(xScale));
@@ -50,7 +48,7 @@ function GroupStats({ data, type }) {
         g.append("g")
             .call(d3.axisLeft(yScale).ticks(3));
 
-        // ציור העמודות (שימוש ב-filteredData!)
+       // Create bars
         g.selectAll(".bar")
             .data(filteredData) 
             .enter().append("rect")
@@ -68,7 +66,6 @@ function GroupStats({ data, type }) {
         const pie = d3.pie().value(d => d.count);
         const arc = d3.arc().innerRadius(0).outerRadius(radius);
         
-        // במקום שורת ה-color הנוכחית, שימי את זה:
         const pastelColors = ["#a8c0ff", "#ffd8a8", "#b8e986", "#ffb7b2", "#d4a5a5"];
         const color = d3.scaleOrdinal(pastelColors);
         
@@ -79,19 +76,19 @@ function GroupStats({ data, type }) {
             .enter().append("g")
             .attr("class", "slice");
 
-        // ציור הפלחים עצמם
+        // Draw pie slices
         slices.append("path")
             .attr("d", arc)
-            .attr("fill", d => color(d.data.name)) // צבע לפי שם הקבוצה
+            .attr("fill", d => color(d.data.name)) 
             .attr("stroke", "white") 
             .style("stroke-width", "2px");
 
-        // הוספת הטקסט (שם הקבוצה)
+        // Add labels to slices
         slices.append("text")
             .attr("transform", d => `translate(${arc.centroid(d)})`)
             .attr("text-anchor", "middle")
             .style("font-size", "12px")
-            .style("fill", "#333") // צבע טקסט כהה וקריא
+            .style("fill", "#333") 
             .text(d => d.data.name);
 }
 

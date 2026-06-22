@@ -2,9 +2,9 @@ import React, { useRef, useState, useEffect } from 'react';
 
 function CanvasEditor({ imageUrl, onSave }) {
   const canvasRef = useRef(null);
-  const [isDrawing, setIsDrawing] = useState(false); // בודק האם המשתמש כרגע "לחוץ"
+  const [isDrawing, setIsDrawing] = useState(false); 
 
-  // טעינת הרקע/תמונה הראשונית
+  // Setting up the canvas and loading the background image if provided  
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -17,22 +17,20 @@ function CanvasEditor({ imageUrl, onSave }) {
     }
   }, [imageUrl]);
 
-  // פונקציות הציור החדשות
   const startDrawing = (e) => {
     setIsDrawing(true);
-    draw(e); // כדי שנוכל לצייר נקודה גם בלחיצה בודדת
+    draw(e); 
   };
 
   const draw = (e) => {
-    if (!isDrawing) return; // צייר רק אם הכפתור לחוץ
+    if (!isDrawing) return; 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     
     ctx.lineWidth = 5;
-    ctx.lineCap = 'round'; // הופך את הקו למעוגל וחלק
+    ctx.lineCap = 'round'; 
     ctx.strokeStyle = 'black'; 
     
-    // חישוב המיקום של העכבר בתוך הקנבס
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -45,7 +43,7 @@ function CanvasEditor({ imageUrl, onSave }) {
 
   const stopDrawing = () => {
     setIsDrawing(false);
-    canvasRef.current.getContext('2d').beginPath(); // איפוס הנתיב
+    canvasRef.current.getContext('2d').beginPath(); // Reset path
   };
 
   const clearCanvas = () => {
@@ -60,7 +58,6 @@ function CanvasEditor({ imageUrl, onSave }) {
       <canvas 
         ref={canvasRef} 
         width={500} height={300} 
-        // אלו האירועים שגורמים לציור חופשי
         onMouseDown={startDrawing}
         onMouseMove={draw}
         onMouseUp={stopDrawing}

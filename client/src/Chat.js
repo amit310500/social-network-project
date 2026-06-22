@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import socket from './socket'; // הקובץ שיצרנו קודם
+import socket from './socket'; 
 import $ from 'jquery';
 
 function Chat({ groupId, user, isMember }) {
@@ -8,36 +8,37 @@ function Chat({ groupId, user, isMember }) {
 
  useEffect(() => {
     if (groupId) {
-        // שליפת ההיסטוריה מהשרת בעזרת jQuery $.ajax כפי שנדרש בדרישות
+        // Fetch chat history from server 
         $.ajax({
             url: `http://localhost:5001/api/messages/${groupId}`,
             method: 'GET',
             success: (data) => {
-                setChat(data); // עדכון הסטייט עם כל ההודעות הישנות
+                setChat(data); // Load all past messages into state
             },
             error: (err) => console.error("Could not fetch history", err)
         });
-
+        // Tell the server we're entering this specific group room
         socket.emit('join_group', groupId);
     }
 }, [groupId]);
 
   useEffect(() => {
+    // Listen for new incoming messages
     socket.on('receive_message', (data) => {
-        setChat((prev) => [...prev, data]); // הוספת ההודעה החדשה לסוף הרשימה
+        setChat((prev) => [...prev, data]); 
     });
     return () => socket.off('receive_message');
     }, []);
 
   const sendMessage = () => {
-    if (!message.trim()) return;
+    if (!message.trim()) return; // Don't send empty messages
     
-    // נוסיף את ה-userId (את יכולה לקבל אותו מהפרופס של user)
+    // Send message to server via socket
     socket.emit('send_message', { 
         groupId, 
         text: message, 
         sender: user.username, 
-        userId: user._id // ודאי שזהו השדה הנכון ב-User שלך
+        userId: user._id 
     });
     setMessage("");
   };
@@ -53,7 +54,7 @@ function Chat({ groupId, user, isMember }) {
         }}>
         <h3 style={{ textAlign: 'center', color: '#333' }}>Group Chat</h3>
         
-        {/* פס התראה למשתמשים שלא חברים */}
+        {/* Warning for non-members */}
         {!isMember && (
             <div style={{ 
                 background: '#fff3cd', 

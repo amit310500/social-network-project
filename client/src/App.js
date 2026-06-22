@@ -6,10 +6,11 @@ import GroupList from './GroupList';
 import PostsFeed from './PostsFeed';
 import MyFeed from './MyFeed';
 import GroupStats from './GroupStats';
-import Profile from './Profile'; // הוספנו את הייבוא
+import Profile from './Profile';
 import { FaHome } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 
+// Application state management for user session, UI views, and statistics
 function App() {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +20,7 @@ function App() {
   const [stats, setStats] = useState({ postsByMonth: [], postsByGroup: [] });
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // פונקציה לרענון נתוני הקבוצה מהשרת
+// Refreshes the details of the currently selected group from the server
   const refreshSelectedGroup = () => {
     if (!selectedGroup) return;
     $.ajax({
@@ -33,6 +34,7 @@ function App() {
     });
   };
 
+  // Initial load: fetch current user profile and post statistics
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -47,6 +49,7 @@ function App() {
         setUser({ ...userData, token });
         setIsLoading(false);
 
+        // Fetch statistics for the dashboard view
         $.ajax({
             url: 'http://localhost:5001/api/posts/stats',
             headers: { 'Authorization': 'Bearer ' + token },
@@ -56,6 +59,7 @@ function App() {
             error: (err) => console.error("Error fetching stats", err)
         });
       },
+      // Clear token if session is invalid
       error: () => {
         localStorage.removeItem('token');
         setIsLoading(false);
@@ -70,6 +74,7 @@ function App() {
     setSelectedGroup(null);
   };
 
+  // Switches view to a specific group and fetches its full details
   const handleGroupSelect = (group) => {
     setViewMode('group');
     $.ajax({

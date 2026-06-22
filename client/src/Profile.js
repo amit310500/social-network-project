@@ -5,13 +5,15 @@ function Profile({ user, onLogout }) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
 
+  // Sync component state with the user object passed from props
   useEffect(() => {
     if (user) {
       setUsername(user.username || "");
       setEmail(user.email || "");
     }
-  }, [user]); // כל פעם שהאובייקט user משתנה, השדות מתעדכנים
+  }, [user]); 
 
+  // Sends updated profile data to the backend
   const handleUpdate = () => {
     const token = localStorage.getItem('token');
     $.ajax({
@@ -22,7 +24,6 @@ function Profile({ user, onLogout }) {
       data: JSON.stringify({ username, email }),
       success: (data) => {
         alert("Profile updated successfully!");
-        // אפשר כאן לעדכן גם את ה-State של המשתמש באפליקציה אם צריך
       },
       error: (err) => alert("Update failed: " + err.responseText)
     });
@@ -37,8 +38,8 @@ function Profile({ user, onLogout }) {
         headers: { 'Authorization': 'Bearer ' + token },
         success: () => {
           alert("Account deleted.");
-          localStorage.removeItem('token'); // ניקוי ה-Token
-          if (onLogout) onLogout(); // הפניה לדף התחברות
+          localStorage.removeItem('token'); // Clear the session
+          if (onLogout) onLogout(); // Redirect to login
         },
         error: (err) => alert("Delete failed: " + err.responseText)
       });

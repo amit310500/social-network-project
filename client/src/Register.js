@@ -9,15 +9,14 @@ function Register({ onBackToLogin }) {
     const handleRegister = (e) => {
         e.preventDefault();
         
-        // שליחת הנתונים לשרת - כולל שדה האימייל החדש
         $.ajax({
             url: 'http://localhost:5001/api/users/register',
             method: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ username, email, password }), // הוספנו את email כאן
+            data: JSON.stringify({ username, email, password }), 
             success: (response) => {
                 alert("Registration successful! You can now login.");
-                onBackToLogin(); 
+                onBackToLogin(); // Return to login view
             },
             error: (err) => {
                 const errorMsg = err.responseJSON ? err.responseJSON.message : "Registration failed";
@@ -50,7 +49,6 @@ function Register({ onBackToLogin }) {
                     />
                 </div>
 
-                {/* שדה אימייל חדש */}
                 <div style={{ marginBottom: '15px' }}>
                     <input 
                         type="email" 
@@ -88,6 +86,7 @@ function Register({ onBackToLogin }) {
                 </button>
             </form>
             
+            {/* Navigation back to login */}
             <div style={{ marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '15px' }}>
                 <button 
                     onClick={onBackToLogin} 

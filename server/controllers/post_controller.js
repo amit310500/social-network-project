@@ -1,6 +1,7 @@
 const Post = require('../models/Post');
-const Group = require('../models/Group'); // נדרש לבדיקת הרשאות
+const Group = require('../models/Group'); 
 
+// Creates a new post after verifying membership in the specified group
 const createPost = async (req, res) => {
     console.log("Data received in server:", req.body);
     try {
@@ -12,7 +13,6 @@ const createPost = async (req, res) => {
         }
         if (!groupId) return res.status(400).json({ message: "Group ID is required" });
 
-        // בדיקה: האם המשתמש חבר בקבוצה או מנהל?
         const group = await Group.findById(groupId);
         if (!group) return res.status(404).json({ message: "Group not found" });
 
@@ -43,19 +43,20 @@ const createPost = async (req, res) => {
     }
 };
 
+// Deletes a post if the user is the owner or the group administrator
 const deletePost = async (req, res) => {
     try {
         const post = await Post.findById(req.params.id);
         if (!post) return res.status(404).json({ message: "Post not found" });
 
-        // 1. שליפת הקבוצה אליה שייך הפוסט כדי לבדוק מי המנהל
-        const group = await Group.findById(post.group); // שים לב: לפי הקוד שלך השדה הוא "group"
+        // Retrieving the group the post belongs to to check who the admin is
+        const group = await Group.findById(post.group); 
         
-        // 2. הגדרת משתני בדיקה
+        // Setting test variables
         const isOwner = post.sender.toString() === req.user.id;
-        const isAdmin = group && group.admin.toString() === req.user.id; // בדיקה אם המשתמש הוא המנהל
+        const isAdmin = group && group.admin.toString() === req.user.id; 
 
-        // 3. אישור מחיקה אם הוא הבעלים או המנהל
+        // 3. Delete confirmation if he is the owner or manager
         if (isOwner || isAdmin) {
             await post.deleteOne();
             res.status(200).json({ message: "Deleted successfully" });
@@ -67,6 +68,7 @@ const deletePost = async (req, res) => {
     }
 };
 
+// Updates existing post content (only the original sender can update)
 const updatePost = async (req, res) => {
     try {
         console.log("--- Start Update ---");
@@ -97,21 +99,22 @@ const updatePost = async (req, res) => {
     }
 };
 
+// Searches posts based on text, username, and date filters
 const searchPosts = async (req, res) => {
     try {
         const { text, username, startDate, groupId } = req.query;
         let query = {};
 
-        // 1. סינון חובה לפי קבוצה
+        // filtering by group
         if (groupId) query.group = groupId; 
         
-        // 2. סינון לפי תאריך ספציפי (טיפול בטווח של יום שלם)
+        // 2. Filter by specific date (treatment within a whole day)
         if (startDate) {
             const start = new Date(startDate);
-            start.setHours(0, 0, 0, 0); // תחילת היום (00:00:00)
+            start.setHours(0, 0, 0, 0); 
             
             const end = new Date(startDate);
-            end.setHours(23, 59, 59, 999); // סוף היום (23:59:59)
+            end.setHours(23, 59, 59, 999); 
             
             query.createdAt = { 
                 $gte: start, 
@@ -119,20 +122,20 @@ const searchPosts = async (req, res) => {
             };
         }
 
-        // 3. סינון לפי טקסט
-        // אם המשתמש כתב טקסט, נחפש אותו ב-content. 
-        // בגלל ששאר הפילטרים (קבוצה ותאריך) נמצאים ב-query, 
-        // פוסטים ללא טקסט שנוצרו בתאריך הזה עדיין יופיעו בתוצאות.
+        // Filter by text
+        // If the user wrote text, we will search for it in the content.
+        // Because the other filters (group and date) are in the query,
+        // posts without text created on that date will still appear in the results.
         if (text) {
             query.content = { $regex: text, $options: 'i' };
         }
 
-        // 4. שליפה מה-DB
+        // Retrieve from the DB
         let posts = await Post.find(query)
             .populate('sender', 'username')
             .sort({ createdAt: -1 });
         
-        // 5. סינון שם משתמש בצד השרת (מכיוון שזה Populate)
+        // 5. Server-side username filtering (because it's Populate)
         if (username) {
             posts = posts.filter(post => 
                 post.sender && post.sender.username.toLowerCase().includes(username.toLowerCase())
@@ -146,15 +149,15 @@ const searchPosts = async (req, res) => {
     }
 };
 
+// Fetches the user's personal feed
 const getPersonalFeed = async (req, res) => {
     try {
         console.log("Looking for posts for user ID:", req.user.id);
         
-        // מציאת הפוסטים של המשתמש
         const myPosts = await Post.find({ sender: req.user.id })
                                   .populate('sender', 'username')
                                   .populate('group', 'name')
-                                  .sort({ createdAt: -1 }); // הוספתי מיון לתוצאה טובה יותר
+                                  .sort({ createdAt: -1 }); 
         
         console.log("Found posts count:", myPosts.length);
         
@@ -165,6 +168,7 @@ const getPersonalFeed = async (req, res) => {
     }
 };
 
+// Fetches all posts from a specific user
 const getUserPosts = async (req, res) => {
     try {
         const posts = await Post.find({ sender: req.params.userId }).populate('sender', 'username').populate('group', 'name');;
@@ -174,34 +178,33 @@ const getUserPosts = async (req, res) => {
     }
 };
 
+// Fetches all posts for a specific group
 const getAllPosts = async (req, res) => {
     try {
-        // req.query.groupId מגיע מה-URL: /api/posts?groupId=...
         const group = await Group.findById(req.query.groupId); 
         if (!group) return res.status(404).json({ message: "Group not found" });
 
-        // ... בדיקות הרשאות ...
-
-        // כאן השתמשת נכון בשם השדה "group" שראינו ב-MongoDB
         const posts = await Post.find({ group: req.query.groupId }).populate('sender', 'username');
         res.status(200).json(posts);
     } catch (err) {
         res.status(500).json({ message: "Error" });
     }
 };
+
+// Handles media file uploads and returns the file URL
 const uploadMedia = async (req, res) => {
     if (!req.file) {
     return res.status(400).json({ message: "No file uploaded" });
   }
-  
-  // ה-URL שהFrontend ישתמש בו
+
   const mediaUrl = `http://localhost:5001/uploads/${req.file.filename}`;
   res.status(200).json({ mediaUrl });
 };
 
+// Generates aggregated statistics for posts by month and by group
 const getStats = async (req, res) => {
     try {
-        // גרף 1: פוסטים לפי חודש
+        // Graph 1: Posts by month
         const postsByMonth = await Post.aggregate([
             { 
                 $group: { 
@@ -224,13 +227,12 @@ const getStats = async (req, res) => {
             { $sort: { month: 1 } }
         ]);
         
-        // גרף 2: פוסטים לפי קבוצה
-        // שים לב: השתמשתי ב-"group" במקום ב-"groupId" לפי איך שכתבת ב-createPost
+        // Graph 2: Posts by group
         const postsByGroup = await Post.aggregate([
             { $group: { _id: "$group", count: { $sum: 1 } } }, 
             { 
                 $lookup: { 
-                    from: "groups", // שם האוסף ב-DB (בדרך כלל באות קטנה וברבים)
+                    from: "groups", 
                     localField: "_id", 
                     foreignField: "_id", 
                     as: "groupInfo" 
@@ -254,7 +256,7 @@ const getStats = async (req, res) => {
 
 
 module.exports = {
-    getAllPosts, // <--- זה היה חסר!
+    getAllPosts, 
     createPost,
     deletePost,
     updatePost,

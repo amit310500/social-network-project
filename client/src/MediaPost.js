@@ -3,20 +3,18 @@ import React from 'react';
 function MediaPost({ mediaUrl }) {
   if (!mediaUrl) return null;
 
-  //const fullUrl = mediaUrl.startsWith('http') ? mediaUrl : `http://localhost:5001/${mediaUrl}`;
-
+  // Determine if the URL is absolute or needs to be prepended with the server path
   const fullUrl = (mediaUrl.startsWith('http') || mediaUrl.startsWith('blob')) 
     ? mediaUrl 
     : `http://localhost:5001/${mediaUrl}`;
   
-  // זיהוי סיומות וידאו כולל mov
+  // Check file extension to see if it's a video
   const isVideo = fullUrl.match(/\.(mp4|webm|ogg|mov)$/i);
 
   return (
     <div style={{ width: '100%', borderRadius: '8px', overflow: 'hidden' }}>
       {isVideo ? (
         <video controls width="100%" key={fullUrl}>
-          {/* הוספת סוגים נוספים לתאימות טובה יותר */}
           <source src={fullUrl} type={fullUrl.endsWith('.mov') ? 'video/quicktime' : 'video/mp4'} />
           Your browser does not support the video tag.
         </video>
@@ -27,7 +25,7 @@ function MediaPost({ mediaUrl }) {
           style={{ width: '100%' }} 
           onError={(e) => { 
             console.error("Failed to load:", fullUrl);
-            e.target.style.display = 'none'; // מסתיר אם התמונה שבורה
+            e.target.style.display = 'none';
           }} 
         />
       )}

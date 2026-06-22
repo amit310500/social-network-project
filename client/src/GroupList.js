@@ -6,7 +6,6 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
   const [newGroupName, setNewGroupName] = useState("");
   const token = user?.token || localStorage.getItem('token');
 
-  // פונקציה למשיכת הקבוצות
   const fetchGroups = () => {
     if (!token) return;
     $.ajax({
@@ -22,7 +21,6 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
     if (token) fetchGroups();
   }, [token]);
 
-  // פונקציה ליצירת קבוצה
   const handleCreateGroup = (e) => {
     e.preventDefault();
     if (!newGroupName.trim()) return;
@@ -41,7 +39,6 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
     });
   };
 
-  // פונקציה למחיקת קבוצה
   const deleteGroup = (groupId) => {
     const isConfirmed = window.confirm("Are you sure you want to delete this group?");
     if (isConfirmed) {
@@ -62,7 +59,6 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
 
   const handleEditGroupName = (groupId, currentName) => {
     const newName = prompt("Enter new group name:", currentName);
-    // בדיקה שהשם שונה ולא ריק
     if (!newName || newName === currentName || !newName.trim()) return;
 
     $.ajax({
@@ -118,10 +114,10 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
               👥 {g.name}
             </span>
 
-            {/* כפתור מחיקה/עריכה - יופיע רק אם המשתמש הוא המנהל של הקבוצה */}
+            {/* Admin buttons: Edit & Delete only show if current user is the admin */}
             {user && g.admin?._id === user._id && (
               
-              <div style={{ display: 'flex', gap: '8px' }}> {/* כאן הוספנו את ה-gap */}
+              <div style={{ display: 'flex', gap: '8px' }}>
               <button 
                 onClick={(e) => {
                   e.stopPropagation(); 
@@ -143,8 +139,6 @@ function GroupList({ user, onSelectGroup, selectedGroupId, onShowMyFeed }) {
                         padding: '6px 14px', borderRadius: '8px', border: '1px solid #dc3545',
                         background: '#ffffff', color: '#dc3545', cursor: 'pointer', fontWeight: '600'
                       }}
-                      //onMouseOver={(e) => { e.target.style.background = '#dc3545'; e.target.style.color = '#ffffff'; }}
-                      //onMouseOut={(e) => { e.target.style.background = '#ffffff'; e.target.style.color = '#dc3545'; }}
                     >
                       Delete
               </button>

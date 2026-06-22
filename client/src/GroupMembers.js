@@ -15,7 +15,7 @@ function GroupMembers({ groupId, token, isAdmin, currentUserId }) {
     }, [groupId, token]);
 
     useEffect(() => {
-        fetchMembers();
+        fetchMembers(); // Refresh the list after successful removal
     }, [fetchMembers]);
 
     const handleRemove = (memberId) => {
@@ -26,7 +26,7 @@ function GroupMembers({ groupId, token, isAdmin, currentUserId }) {
             method: 'DELETE',
             headers: { 'Authorization': 'Bearer ' + token },
             success: () => {
-                fetchMembers(); 
+                fetchMembers();  
             },
             error: (err) => alert("Failed to remove: " + (err.responseJSON?.message || "Error"))
         });
@@ -55,8 +55,7 @@ function GroupMembers({ groupId, token, isAdmin, currentUserId }) {
                             </div>
                         </div>
 
-                        {/* כפתור הסרה למנהל בלבד, שלא יכול להסיר את עצמו */}
-                        {(isAdmin && member._id !== currentUserId) && (
+                            {/* Only allow admins to remove members, and prevent admin from removing themselves */}                        {(isAdmin && member._id !== currentUserId) && (
                             <button 
                                 onClick={() => handleRemove(member._id)}
                                 style={{ 

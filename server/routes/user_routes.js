@@ -1,25 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/user_controller');
-const auth = require('../middleware/auth'); // ודאי שהנתיב לקובץ נכון
+const auth = require('../middleware/auth'); 
 
-// 1. Public Routes (נתיבים פתוחים לכולם)
-// Registration: POST /api/users/register
+// Public Routes (Accessible without authentication)
+// ------------------------------------------------
+
+// Register a new user
 router.post('/register', userController.register);
 
-// Login: POST /api/users/login
+// Authenticate user and return a JWT
 router.post('/login', userController.login);
 
-// 2. Private Routes (נתיבים שדורשים התחברות - אופציונלי להמשך)
-// לדוגמה: קבלת פרטי המשתמש המחובר כרגע
-// router.get('/profile', authMiddleware, userController.getProfile);
 
-// קבלת פרטי המשתמש הנוכחי
+// Private Routes (Require valid JWT)
+// ----------------------------------
+
+// Fetch current authenticated user's profile
 router.get('/me', auth, userController.getMe);
 
-router.put('/:id', auth, userController.updateUser);      // עדכון
-router.delete('/:id', auth, userController.deleteUser);   // מחיקה
+// Update user details by ID
+router.put('/:id', auth, userController.updateUser); 
 
+// Delete a user account by ID
+router.delete('/:id', auth, userController.deleteUser);   
+
+// Search users based on query parameters
 router.get('/search/users', auth, userController.searchUsers);
 
 module.exports = router;

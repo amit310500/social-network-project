@@ -4,7 +4,7 @@ import $ from 'jquery';
 function PostSearch({ token, groupId, onSearchResults, onClear }) {
   const [searchParams, setSearchParams] = useState({ content: "", username: "", startDate: "" });
 
-  // PostSearch.js - בתוך הפונקציה handleSearch
+// Function to filter posts based on search inputs
 const handleSearch = () => {
     $.ajax({
       url: `http://localhost:5001/api/posts/search/posts`,
@@ -14,10 +14,10 @@ const handleSearch = () => {
         text: searchParams.content, 
         username: searchParams.username,
         startDate: searchParams.startDate,
-        groupId: groupId // כאן השתמשנו ב-prop שעובר מהאב, ולא ב-group._id שלא קיים כאן
+        groupId: groupId
       },
       success: (data) => {
-        onSearchResults(data); // מעדכן את ה-posts ב-PostsFeed
+        onSearchResults(data); // Send results back to the parent component
       },
       error: (err) => {
         console.error("Search error:", err);
@@ -39,6 +39,7 @@ const handleSearch = () => {
   );
 }
 
+// Styling for inputs and buttons
 const inputStyle = { padding: '8px', borderRadius: '6px', border: '1px solid #ccc', flex: 1 };
 const buttonStyle = { padding: '8px 16px', background: '#9370DB', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' };
 const secondaryButtonStyle = { padding: '8px 16px', background: '#6c757d', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' };

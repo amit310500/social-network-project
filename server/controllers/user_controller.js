@@ -2,13 +2,12 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// Register (Create User)
+// Register a new user and ensure username/email uniqueness
 const register = async (req, res) => {
     try {
-        // הוספנו את email לחילוץ מהבקשה
         const { username, email, password } = req.body;
 
-        // בדיקה אם שם המשתמש או האימייל כבר קיימים
+        // Check if the user already exists
         const userExists = await User.findOne({ 
             $or: [{ username }, { email }] 
         });
@@ -19,15 +18,14 @@ const register = async (req, res) => {
             });
         }
 
-        // יצירת משתמש חדש
-        // בזכות ה-pre('save') במודל, הסיסמה תוצפן אוטומטית לפני השמירה
+       // Create new user (Password hashing is handled by the model's pre-save hook)
         const newUser = new User({ 
             username, 
             email, 
             password 
         });
-
         await newUser.save();
+
         res.status(201).send({ message: "User created successfully" });
     } catch (error) {
         console.error("Register Error:", error);
@@ -38,20 +36,19 @@ const register = async (req, res) => {
     }
 };
 
-// Login (Authentication)
+// Login user and generate a JWT for authentication
 const login = async (req, res) => {
     try {
         const { username, password } = req.body;
         
-        // מציאת המשתמש לפי שם
         const user = await User.findOne({ username });
         
-        // השוואת הסיסמה שהוזנה מול הסיסמה המוצפנת ב-DB
+        // Verify credentials
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.status(401).send({ message: "Invalid username or password" });
         }
         
-        // יצירת Token
+        // Generate Token
         const token = jwt.sign(
             { id: user._id, role: user.role }, 
             process.env.JWT_SECRET, 
@@ -60,7 +57,7 @@ const login = async (req, res) => {
 
         res.send({ 
             token, 
-            _id: user._id,   // הוספת המזהה הייחודי מה-DB
+            _id: user._id,   
             username: user.username, 
             role: user.role 
         });
@@ -70,9 +67,9 @@ const login = async (req, res) => {
     }
 };
 
+// Fetch current user details excluding the password
 const getMe = async (req, res) => {
     try {
-        // req.user.id מגיע מה-Middleware
         const user = await User.findById(req.user.id).select('-password');
         if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -83,17 +80,16 @@ const getMe = async (req, res) => {
     }
 };
 
-// Update User (עדכון פרטי משתמש - שם משתמש או אימייל)
+// Update user profile information (username and email)
 const updateUser = async (req, res) => {
     try {
         const { username, email } = req.body;
         
-        // עדכון המשתמש לפי ה-ID שהגיע מהפרמטרים של ה-URL
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id, 
             { username, email }, 
             { new: true, runValidators: true }
-        ).select('-password'); // לא להחזיר את הסיסמה בטעות
+        ).select('-password'); // Don't accidentally return the password
 
         if (!updatedUser) {
             return res.status(404).send({ message: "User not found" });
@@ -106,7 +102,7 @@ const updateUser = async (req, res) => {
     }
 };
 
-// Delete User (מחיקת משתמש)
+// Delete a user account from the database
 const deleteUser = async (req, res) => {
     try {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
@@ -122,23 +118,19 @@ const deleteUser = async (req, res) => {
     }
 };
 
+// Search users based on various filters (username, email, or registration date)
 const searchUsers = async (req, res) => {
     try {
         const { username, email, startDate } = req.query;
         let query = {};
 
-        // 1. חיפוש שם משתמש
         if (username) query.username = { $regex: username, $options: 'i' };
-        
-        // 2. חיפוש אימייל
         if (email) query.email = { $regex: email, $options: 'i' };
-        
-        // 3. חיפוש לפי תאריך הצטרפות (משתמש ב-createdAt הקיים)
         if (startDate) {
             query.createdAt = { $gte: new Date(startDate) };
         }
 
-        // שליפת המשתמשים (ללא הסיסמה)
+        // Retrieve the users (without the password)
         const users = await User.find(query).select('-password');
         res.status(200).json(users);
     } catch (err) {
