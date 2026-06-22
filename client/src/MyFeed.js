@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import $ from 'jquery';
-import VideoPost from './VideoPost';
+import VideoPost from './MediaPost';
 
 function MyFeed({ user, currentUserId }) {
 const [posts, setPosts] = useState([]);

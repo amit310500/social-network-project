@@ -191,6 +191,28 @@ const updateGroup = async (req, res) => {
         res.status(500).json({ message: "Failed to update group name" });
     }
 };
+const removeMember = async (req, res) => {
+    try {
+        const { groupId, memberId } = req.params;
+        const currentUserId = req.user.id; // המשתמש המחובר
+
+        const group = await Group.findById(groupId);
+        if (!group) return res.status(404).json({ message: "Group not found" });
+
+        // בדיקה: האם המשתמש המחובר הוא המנהל?
+        if (group.admin.toString() !== currentUserId) {
+            return res.status(403).json({ message: "Only the admin can remove members" });
+        }
+
+        // הסרת המשתמש מהמערך (pull)
+        group.members = group.members.filter(m => m.toString() !== memberId);
+        await group.save();
+
+        res.status(200).json({ message: "Member removed successfully" });
+    } catch (err) {
+        res.status(500).json({ message: "Error removing member", error: err.message });
+    }
+};
 
 module.exports = { 
     createGroup, 
@@ -203,5 +225,6 @@ module.exports = {
     getGroupDetails,
     getGroupById,
     getGroupMembers,
-    updateGroup
+    updateGroup,
+    removeMember
 };

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import $ from 'jquery';
-import VideoPost from './VideoPost';
+import MediaPost from './MediaPost';
 import CanvasEditor from './CanvasEditor';
 import GroupMembers from './GroupMembers';
 import UserSearch from './UserSearch';
@@ -12,8 +12,10 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState("");
   const [showCanvas, setShowCanvas] = useState(false);
-  const [pendingVideoUrl, setPendingVideoUrl] = useState(null);
+  const [pendingMediaUrl, setPendingMediaUrl] = useState(null);
   const [pendingDrawing, setPendingDrawing] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   
   const token = user?.token || localStorage.getItem('token');
   const isMember = group?.members.includes(currentUserId);
@@ -54,75 +56,85 @@ function PostsFeed({ user, group, currentUserId, onRefresh }) {
 }, [group]);
 
  const handleSubmit = (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // 1. הגדרת תוכן ברירת מחדל אם הכל ריק
-  let finalContent = newPost.trim();
-  if (!finalContent && !pendingVideoUrl && !pendingDrawing) {
-    alert("Please add content to your post!");
-    return;
-  }
+    // 1. הגדרת תוכן ברירת מחדל אם הכל ריק
+    let finalContent = newPost.trim();
+    if (pendingMediaUrl && pendingMediaUrl.startsWith('blob:')) {
+      alert("Please wait for the media to finish uploading!");
+      return;
+    }
 
-  // 2. הכנת האובייקט
-  const postData = { 
-    content: finalContent, 
-    groupId: group._id, 
-    mediaUrl: pendingVideoUrl, 
-    drawing: pendingDrawing 
+    // 2. הכנת האובייקט
+    const postData = { 
+      content: finalContent, 
+      groupId: group._id, 
+      mediaUrl: pendingMediaUrl, 
+      drawing: pendingDrawing 
+    };
+
+    console.log("Submitting:", postData); // נבדוק מה נשלח ב-Console
+
+    $.ajax({
+      url: 'http://localhost:5001/api/posts',
+      method: 'POST',
+      contentType: 'application/json',
+      headers: { 'Authorization': 'Bearer ' + token },
+      data: JSON.stringify(postData),
+      success: (p) => { 
+        setNewPost(""); 
+        setPendingMediaUrl(null); 
+        setPendingDrawing(null);
+        setPosts([p, ...posts]); 
+        setShowCanvas(false); 
+      },
+      error: (err) => {
+        console.error("Server Error:", err.responseText);
+        alert("Failed: " + (err.responseJSON?.message || "Check the console"));
+      }
+    });
   };
 
-  console.log("Submitting:", postData); // נבדוק מה נשלח ב-Console
+  const handleMediaUpload = (file) => {
+    if (!file) return;
+    setIsUploading(true);
 
-  $.ajax({
-    url: 'http://localhost:5001/api/posts',
-    method: 'POST',
-    contentType: 'application/json',
-    headers: { 'Authorization': 'Bearer ' + token },
-    data: JSON.stringify(postData),
-    success: (p) => { 
-      setNewPost(""); 
-      setPendingVideoUrl(null); 
-      setPendingDrawing(null);
-      setPosts([p, ...posts]); 
-      setShowCanvas(false); 
-    },
-    error: (err) => {
-      console.error("Server Error:", err.responseText);
-      alert("Failed: " + (err.responseJSON?.message || "Check the console"));
+    const previewUrl = URL.createObjectURL(file);
+    setPendingMediaUrl(previewUrl);
+
+    const formData = new FormData();
+    formData.append('media', file); // וודאי שבשרת ה-Multer מצפה לשם 'media'
+
+    $.ajax({
+      url: 'http://localhost:5001/api/posts/upload-media', // נתיב חדש או קיים בשרת
+      method: 'POST',
+      data: formData,
+      processData: false,
+      contentType: false,
+      headers: { 'Authorization': 'Bearer ' + token },
+      success: (data) => {
+        setPendingMediaUrl(data.mediaUrl);
+        setIsUploading(false); // סיום מוצלח
+      },
+      error: (err) => {
+        alert("Upload failed");
+        setPendingMediaUrl(null);
+        setIsUploading(false); // סיום בכישלון
+      }
+    });
+  };
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // יצירת URL מקומי לתצוגה מקדימה
+      const previewUrl = URL.createObjectURL(file);
+      setPendingMediaUrl(previewUrl); 
+      setSelectedFile(file);
+      
+      // כאן את קוראת לפונקציית ההעלאה לשרת שהייתה לך
+      handleMediaUpload(file); 
     }
-  });
-};
-
-  const handleVideoUpload = (file) => {
-  if (!file) return;
-
-  // 1. תצוגה מקדימה מיידית (זה עובד כבר ב-Preview שלך)
-  const previewUrl = URL.createObjectURL(file);
-  setPendingVideoUrl(previewUrl); 
-
-  // 2. העלאה לשרת
-  const formData = new FormData();
-  formData.append('video', file); // וודאי ששם השדה 'video' תואם למה שהשרת מצפה (למשל ב-Multer)
-  
-  $.ajax({
-    url: 'http://localhost:5001/api/posts/upload-video',
-    method: 'POST',
-    data: formData,
-    processData: false, 
-    contentType: false,
-    headers: { 'Authorization': 'Bearer ' + token },
-    success: (data) => {
-      console.log("Video uploaded successfully:", data);
-      setPendingVideoUrl(data.videoUrl); // עדכון ל-URL הקבוע
-    },
-    error: (err) => {
-      // הדפסת השגיאה המדויקת מהשרת ל-Console
-      console.error("Server Error details:", err);
-      alert("Video upload failed: " + (err.responseJSON?.message || err.statusText));
-      setPendingVideoUrl(null); // ניקוי ה-Preview במקרה של כשל
-    }
-  });
-};
+  };
 
   const handleDelete = (postId) => {
     $.ajax({
@@ -230,15 +242,42 @@ return (
                 placeholder="What's on your mind?" 
                 style={{ width: '100%', border: 'none', resize: 'none', fontSize: '16px', outline: 'none', marginBottom: '15px' }} 
               />
-              {(pendingVideoUrl || pendingDrawing) && (
+              {(pendingMediaUrl || pendingDrawing) && (
                 <div style={{ marginBottom: '20px', padding: '15px', background: '#f8f9fa', borderRadius: '12px', border: '1px solid #e1e8ed' }}>
                   <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#666' }}>Preview:</p>
-                  {pendingVideoUrl && (
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
-                      <video src={pendingVideoUrl} width="200" controls style={{ borderRadius: '8px' }} />
-                      <button type="button" onClick={() => setPendingVideoUrl(null)} style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '25px', height: '25px' }}>×</button>
-                    </div>
-                  )}
+                  {pendingMediaUrl && (
+  <div style={{ position: 'relative', display: 'inline-block' }}>
+    {/* בדיקה מורחבת לסוג המדיה */}
+    {pendingMediaUrl.startsWith('blob:') ? (
+      // אם זה blob, תני לו לנסות להציג לפי סוג הקובץ
+      pendingMediaUrl.includes('video') || selectedFile?.type.startsWith('video') ? (
+        <video 
+          key={pendingMediaUrl} // ה-key גורם לדפדפן לרענן את הנגן אם ה-URL משתנה
+          width="200" 
+          controls 
+          preload="metadata" // חשוב: טוען רק את הנתונים הראשוניים של הוידאו
+          style={{ borderRadius: '8px' }}
+        >
+          <source src={pendingMediaUrl} type={selectedFile?.type} />
+          Your browser does not support the video tag.
+        </video>
+      ) : (
+        <img src={pendingMediaUrl} alt="Preview" style={{ width: '200px', borderRadius: '8px' }} />
+      )
+    ) : (
+      // אם זה כבר מהשרת, ה-MediaPost הרגיל שלך יעבוד
+      <MediaPost mediaUrl={pendingMediaUrl} />
+    )}
+    
+    <button 
+      type="button" 
+      onClick={() => { setPendingMediaUrl(null); setSelectedFile(null); }} 
+      style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '50%', cursor: 'pointer', width: '25px', height: '25px' }}
+    >
+      ×
+    </button>
+  </div>
+)}
                   {pendingDrawing && (
                     <div style={{ position: 'relative', display: 'inline-block' }}>
                       <img src={pendingDrawing} alt="Preview" style={{ width: '200px', borderRadius: '8px', border: '1px solid #ddd' }} />
@@ -249,8 +288,17 @@ return (
               )}
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <button type="button" onClick={() => setShowCanvas(!showCanvas)} style={{ padding: '8px 16px', background: '#6c757d', color: '#fff', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>{showCanvas ? "Close" : "Add Drawing"}</button>
-                <label htmlFor="video-upload" style={{ cursor: 'pointer', padding: '8px 16px', background: '#6c757d', color: '#fff', borderRadius: '20px' }}>Upload Video</label>
-                <input type="file" id="video-upload" accept="video/*" onChange={(e) => { if (e.target.files && e.target.files[0]) handleVideoUpload(e.target.files[0]); }} style={{ display: 'none' }} />
+                {/* כפתור העלאה מאוחד */}
+                <label htmlFor="media-upload" style={{ cursor: 'pointer', padding: '8px 16px', background: '#6c757d', color: '#fff', borderRadius: '20px' }}>
+                  Upload Media
+                </label>
+                <input 
+                    type="file" 
+                    id="media-upload" 
+                    accept="video/*,image/*" 
+                    onChange={handleFileChange} // הקישור לפונקציה החדשה
+                    style={{ display: 'none' }} 
+                  />
                 <button type="submit" style={{ marginLeft: 'auto', padding: '8px 24px', background: '#9370DB', color: '#fff', border: 'none', borderRadius: '20px', cursor: 'pointer' }}>Post</button>
               </div>
               {showCanvas && <div style={{ marginTop: '20px' }}><CanvasEditor onSave={(d) => { setPendingDrawing(d); setShowCanvas(false); }} /></div>}
@@ -261,10 +309,14 @@ return (
           {(isMember || isAdmin) ? (
             posts.length > 0 ? (
               posts.map(post => (
-                <div key={post._id} style={{ background: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e1e8ed' }}>
+                <div key={post._id} style={{ background: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #e1e8ed' , display: 'flex', flexDirection: 'column' }}>
                   <p><strong>{post.sender?.username}</strong></p>
                   <p>{post.content}</p>
-                  {post.mediaUrl && <div style={{ maxWidth: '300px', width: '100%', margin: '10px 0', borderRadius: '8px', overflow: 'hidden' }}><VideoPost videoUrl={post.mediaUrl} /></div>}
+                  {post.mediaUrl && (
+                    <div style={{ maxWidth: '300px', width: '100%', margin: '10px 0', borderRadius: '8px', overflow: 'hidden' }}>
+                      <MediaPost mediaUrl={post.mediaUrl} />
+                    </div>
+                  )}
                   {post.drawing && post.drawing.startsWith("data:image/") && <img src={post.drawing} alt="post" style={{ maxWidth: '300px', width: '100%', height: 'auto', margin: '10px 0', borderRadius: '8px', border: '1px solid #eee' }} />}
                   <small style={{ color: '#888' }}>{new Date(post.createdAt).toLocaleString()}</small>
                   {(post.sender?._id === currentUserId || isAdmin) && (
@@ -302,12 +354,20 @@ return (
 
       {/* 3. טאב חברים */}
       {activeTab === 'members' && (
-        <GroupMembers groupId={group._id} token={user.token} />
+        <GroupMembers 
+            groupId={group._id} 
+            token={user.token} 
+            isAdmin={isAdmin}             // הוספת ה-Prop הזה
+            currentUserId={currentUserId} // הוספת ה-Prop הזה
+        />
       )}
 
       {/* 4. טאב צאט */}
       {activeTab === 'chat' && (
-        <Chat groupId={group._id} user={user} />
+        <Chat 
+            groupId={group._id} 
+            user={user}
+            isMember={group.members.includes(currentUserId)} />
       )}
 
     </div>

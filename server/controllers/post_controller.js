@@ -48,20 +48,22 @@ const deletePost = async (req, res) => {
         const post = await Post.findById(req.params.id);
         if (!post) return res.status(404).json({ message: "Post not found" });
 
-        // --- כאן בדיוק תוסיפי את הבדיקה ---
-        console.log("Post sender (from DB):", post.sender);
-        console.log("Logged in User ID (from Token):", req.user.id);
-        // ---------------------------------
+        // 1. שליפת הקבוצה אליה שייך הפוסט כדי לבדוק מי המנהל
+        const group = await Group.findById(post.group); // שים לב: לפי הקוד שלך השדה הוא "group"
+        
+        // 2. הגדרת משתני בדיקה
+        const isOwner = post.sender.toString() === req.user.id;
+        const isAdmin = group && group.admin.toString() === req.user.id; // בדיקה אם המשתמש הוא המנהל
 
-        // הבדיקה הקריטית:
-        if (post.sender.toString() !== req.user.id) {
-            return res.status(403).json({ message: "Unauthorized: You can only delete your own posts" });
+        // 3. אישור מחיקה אם הוא הבעלים או המנהל
+        if (isOwner || isAdmin) {
+            await post.deleteOne();
+            res.status(200).json({ message: "Deleted successfully" });
+        } else {
+            return res.status(403).json({ message: "Unauthorized: You don't have permission to delete this post" });
         }
-
-        await post.deleteOne();
-        res.status(200).json({ message: "Deleted successfully" });
     } catch (err) {
-        res.status(500).json({ message: "Error" });
+        res.status(500).json({ message: "Error deleting post", error: err.message });
     }
 };
 
@@ -187,17 +189,14 @@ const getAllPosts = async (req, res) => {
         res.status(500).json({ message: "Error" });
     }
 };
-const uploadVideo = async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: "No file uploaded" });
-        }
-        // נניח שאת שומרת את הקובץ וחוזרת עם ה-URL שלו
-        const videoUrl = `/uploads/${req.file.filename}`; 
-        res.status(200).json({ videoUrl: videoUrl });
-    } catch (err) {
-        res.status(500).json({ message: "Upload failed", error: err.message });
-    }
+const uploadMedia = async (req, res) => {
+    if (!req.file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+  
+  // ה-URL שהFrontend ישתמש בו
+  const mediaUrl = `http://localhost:5001/uploads/${req.file.filename}`;
+  res.status(200).json({ mediaUrl });
 };
 
 const getStats = async (req, res) => {
@@ -263,5 +262,5 @@ module.exports = {
     getPersonalFeed,
     getUserPosts,
     getStats,
-    uploadVideo
+    uploadMedia
 };

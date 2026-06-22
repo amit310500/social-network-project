@@ -8,6 +8,7 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const Group = require('./models/Group');
 
 const Message = require('./models/Message');
 
@@ -65,22 +66,34 @@ mongoose.connection.on('error', err => {
 // 4. Real-time Chat Management (Socket.io)
 io.on('connection', (socket) => {
   console.log('👤 New User Connected:', socket.id);
-  
-  // משתמש מצטרף לחדר ספציפי של הקבוצה
+
   socket.on('join_group', (groupId) => {
-    socket.join(groupId); 
+    socket.join(groupId);
     console.log(`User ${socket.id} joined group: ${groupId}`);
   });
 
-  // שליחת הודעה רק לחברים בחדר של הקבוצה
+  // עדכון השליחה עם בדיקת הרשאות
   socket.on('send_message', async (data) => {
-    // 1. שמירה ב-DB
-    const newMessage = new Message(data);
-    await newMessage.save();
+    const { groupId, sender, userId } = data; // ודאי שאת שולחת גם userId מה-Frontend
 
-    // 2. שליחה בזמן אמת לכולם בחדר
-    io.to(data.groupId).emit('receive_message', data);
-});
+    try {
+      // 1. בדיקה האם המשתמש חבר בקבוצה
+      const group = await Group.findById(groupId);
+      if (!group || !group.members.includes(userId)) {
+        console.warn(`Unauthorized attempt to send message by user ${userId}`);
+        return; // עוצרים כאן ולא שומרים/משדרים את ההודעה
+      }
+
+      // 2. אם הוא חבר, שומרים ומשדרים
+      const newMessage = new Message(data);
+      await newMessage.save();
+      io.to(groupId).emit('receive_message', data);
+      
+    } catch (err) {
+      console.error("Error in send_message:", err);
+    }
+  });
+
   socket.on('disconnect', () => {
     console.log('🔌 User disconnected:', socket.id);
   });

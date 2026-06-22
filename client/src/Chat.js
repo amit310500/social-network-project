@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import socket from './socket'; // הקובץ שיצרנו קודם
 import $ from 'jquery';
 
-function Chat({ groupId, user }) {
+function Chat({ groupId, user, isMember }) {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
 
@@ -31,7 +31,14 @@ function Chat({ groupId, user }) {
 
   const sendMessage = () => {
     if (!message.trim()) return;
-    socket.emit('send_message', { groupId, text: message, sender: user.username });
+    
+    // נוסיף את ה-userId (את יכולה לקבל אותו מהפרופס של user)
+    socket.emit('send_message', { 
+        groupId, 
+        text: message, 
+        sender: user.username, 
+        userId: user._id // ודאי שזהו השדה הנכון ב-User שלך
+    });
     setMessage("");
   };
 
@@ -46,6 +53,22 @@ function Chat({ groupId, user }) {
         }}>
         <h3 style={{ textAlign: 'center', color: '#333' }}>Group Chat</h3>
         
+        {/* פס התראה למשתמשים שלא חברים */}
+        {!isMember && (
+            <div style={{ 
+                background: '#fff3cd', 
+                color: '#856404', 
+                padding: '10px', 
+                borderRadius: '8px', 
+                textAlign: 'center', 
+                marginBottom: '10px',
+                fontSize: '14px',
+                border: '1px solid #ffeeba'
+            }}>
+                🔒 Only group members can send messages.
+            </div>
+        )}
+
         <div style={{ 
             height: '350px', 
             overflowY: 'auto', 
