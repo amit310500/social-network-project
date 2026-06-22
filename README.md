@@ -1,30 +1,41 @@
 # Social Group & Feed Platform
 
-A dynamic social platform designed for group collaboration, allowing users to create groups, share posts, and express themselves creatively with multimedia and custom drawings.
+A feature-rich social networking platform designed for collaborative group environments. This system enables users to build communities, share diverse media content, and engage in real-time communication.
 
-## 🚀 Technologies
+## 👥 Developers
+* **Amit Mitzmacher**
+* **Tal Mitzmacher**
+
+## 🚀 System Capabilities & Features
+
+### 🌐 Group Management & Social Interaction
+* **Community Building:** Users can join private groups and submit join requests.
+* **Administrator Controls:** Advanced management tools for admins to approve/reject member requests and maintain group safety.
+* **Real-time Chat:** Integrated chat module providing instant communication between group members using Socket.io technology.
+
+### 📱 Advanced Feed & Media Engine
+* **Multimedia Support:** Robust handling of image and video uploads, supporting various formats.
+* **Real-time Preview:** Intelligent media preview system using `blob` URL objects, allowing users to verify content before finalizing posts.
+* **Live Feed:** Dynamic update mechanism that reflects new posts immediately without needing to refresh the page.
+
+### 🎨 Creative Tools
+* **Canvas Editor:** A built-in drawing board module allowing users to create custom illustrations, sketches, or diagrams and post them directly to the feed.
+
+### 🔍 Discovery & Search
+* **Advanced Filtering:** Dedicated search components for posts and users, enabling efficient navigation and content discovery within the platform.
+
+## ⚙️ Technical Architecture
+
+### Tech Stack
 * **Frontend:** React.js, jQuery, CSS3
 * **Backend:** Node.js, Express.js
 * **Database:** MongoDB
-* **Real-time:** Socket.io
-* **Media Handling:** Multer
+* **Real-time Engine:** Socket.io
+* **File Processing:** Multer middleware for optimized media handling
 
-## 📋 Key Features
-- **Group Management:** Join private groups, submit join requests, and manage members.
-- **Post Feed:** Real-time feed for viewing, editing, and deleting posts.
-- **Multimedia Sharing:** Seamless upload of images and videos with real-time preview.
-- **Canvas Editor:** Built-in drawing tool for custom illustrations.
-- **Search:** Advanced filtering to find posts and users.
-- **Real-time Chat:** Instant messaging between group members.
-
-## ⚙️ Installation & Setup
+## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v16+)
-- MongoDB
+- Node.js (v16 or higher)
+- MongoDB (installed and running)
 
-### Setup
-1. Clone the repository:
-   ```bash
-   git clone [YOUR_REPOSITORY_URL]
-   cd [PROJECT_FOLDER]
