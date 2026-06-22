@@ -1,6 +1,6 @@
 # Social Group & Feed Platform
 
-A feature-rich social networking platform designed for collaborative group environments. This system enables users to build communities, share diverse media content, and engage in real-time communication.
+A social networking platform designed for collaborative group environments. This system enables users to build communities, share diverse media content, and engage in real-time communication.
 
 ## 👥 Developers
 * **Amit Mitzmacher**
@@ -15,8 +15,8 @@ A feature-rich social networking platform designed for collaborative group envir
 
 ### 📱 Advanced Feed & Media Engine
 * **Multimedia Support:** Robust handling of image and video uploads, supporting various formats.
-* **Real-time Preview:** Intelligent media preview system using `blob` URL objects, allowing users to verify content before finalizing posts.
-* **Live Feed:** Dynamic update mechanism that reflects new posts immediately without needing to refresh the page.
+* **Real-time Preview:** Intelligent media preview system, allowing users to verify content before finalizing posts.
+* **Live Feed:** Dynamic update mechanism that reflects new posts immediately.
 
 ### 🎨 Creative Tools
 * **Canvas Editor:** A built-in drawing board module allowing users to create custom illustrations, sketches, or diagrams and post them directly to the feed.
