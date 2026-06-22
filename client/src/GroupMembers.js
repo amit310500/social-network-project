@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import $ from 'jquery';
 
-function GroupMembers({ groupId, token, isAdmin, currentUserId }) {
+function GroupMembers({ groupId, token, isAdmin, currentUserId, adminId }) {
     const [members, setMembers] = useState([]);
 
     const fetchMembers = useCallback(() => {
@@ -50,12 +50,28 @@ function GroupMembers({ groupId, token, isAdmin, currentUserId }) {
                         <div style={{ display: 'flex', alignItems: 'center' }}>
                             <span style={{ fontSize: '20px', marginRight: '10px' }}>👤</span>
                             <div>
-                                <div style={{ fontWeight: '600', color: '#222' }}>{member.username}</div>
+                                <div style={{ fontWeight: '600', color: '#222', display: 'flex', alignItems: 'center' }}>
+                                    {member.username}
+                                    {/* הצגת תגית ADMIN אם ה-ID של המשתמש תואם ל-adminId */}
+                                    {adminId && member._id.toString() === adminId.toString() && (
+                                        <span style={{ 
+                                            marginLeft: '8px', 
+                                            fontSize: '10px', 
+                                            background: '#3498db', 
+                                            color: '#fff', 
+                                            padding: '2px 6px', 
+                                            borderRadius: '4px' 
+                                        }}>
+                                            ADMIN
+                                        </span>
+                                    )}
+                                </div>
                                 <div style={{ fontSize: '12px', color: '#888' }}>{member.email}</div>
                             </div>
                         </div>
 
-                            {/* Only allow admins to remove members, and prevent admin from removing themselves */}                        {(isAdmin && member._id !== currentUserId) && (
+                            {/* Only allow admins to remove members, and prevent admin from removing themselves */}                        
+                            {(isAdmin && member._id !== currentUserId) && (
                             <button 
                                 onClick={() => handleRemove(member._id)}
                                 style={{ 

@@ -5,11 +5,10 @@ const Post = require('../models/Post');
 const createGroup = async (req, res) => {
     try {
         const { name } = req.body;
-        // יצירת הקבוצה עם השדות הרלוונטיים
         const newGroup = new Group({
             name,
             admin: req.user.id,
-            members: [req.user.id] // הוספנו את עצמך כחברה ראשונה!
+            members: [req.user.id] 
         });
         
         await newGroup.save();

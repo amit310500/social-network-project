@@ -188,7 +188,9 @@ return (
       
       {/* Navigation Tabs */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', background: '#fff', padding: '10px', borderRadius: '12px' }}>
-        {['feed', 'searchUsers', 'members', 'chat'].map(tab => (
+        {['feed','chat', 'members']
+        .concat(isAdmin ? ['searchUsers'] : [])
+        .map(tab => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -348,6 +350,7 @@ return (
             token={user.token} 
             isAdmin={isAdmin}             
             currentUserId={currentUserId} 
+            adminId={group.admin._id}
         />
       )}
 

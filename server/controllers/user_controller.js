@@ -120,6 +120,7 @@ const deleteUser = async (req, res) => {
 
 // Search users based on various filters (username, email, or registration date)
 const searchUsers = async (req, res) => {
+    
     try {
         const { username, email, startDate } = req.query;
         let query = {};
