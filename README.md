@@ -6,6 +6,8 @@ A social networking platform designed for collaborative group environments. This
 * **Amit Mitzmacher**
 * **Tal Mitzmacher**
 
+
+
 ## 🚀 System Capabilities & Features
 
 ### 🌐 Group Management & Social Interaction
